@@ -16,6 +16,10 @@ HNVM is distributed via [Homebrew](https://brew.sh) inside the
 
 ```sh
 brew tap UrbanCompass/versions
+
+# If you get a permissions error tap'ing, try using the repo's ssh url
+brew tap UrbanCompass/versions git@github.com:UrbanCompass/homebrew-versions.git
+
 brew install hnvm
 ```
 
