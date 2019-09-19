@@ -18,7 +18,7 @@ if [[ ! -f "$pkg_json" ]]; then # Default to hnvm-global package.json for versio
 fi
 
 node_ver="$(cat $pkg_json | $jq_bin -r '.engines.hnvm')"
-if [[ -z "$node_ver" ]]; then
+if [[ "$node_ver" == "null" ]]; then
   node_ver="$(cat $pkg_json | $jq_bin -r '.engines.node')"
 fi
 
@@ -31,7 +31,7 @@ if [[ ! "$node_ver" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
   if [ -f $cache_file ] && [ "$(( $(date +"%s") - 60 ))" -le "$(date -r $cache_file +"%s")" ]; then
     node_ver="$(cat $cache_file)"
   else
-    echo "Warning: Resolving node version range \"$node_ver\" is slower than providing an exact version."
+    echo -e $'\e[33mWarning\e[0m: Resolving node version range "'"$node_ver"'" is slower than providing an exact version.'
 
     node_ver="$(curl https://semver.io/node/resolve/$node_ver --silent)"
     echo $node_ver > $cache_file
