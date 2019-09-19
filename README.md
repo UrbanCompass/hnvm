@@ -41,10 +41,29 @@ node main.js # Echo's: "Node version v12.10.0
 
 ## Configuration
 
+### Download Path
+
 By default, `hnvm` will download node and pnpm binaries to `~/.hnvm`. To customize this path, simply
 set the `HNVM_PATH` environment variable, either by exporting it or setting it in your profile:
-
 
 ```sh
 env HNVM_PATH=/path/to/.hnvm
 ```
+
+### Node and PNPM Versions
+
+HNVM checks for what versions of `node` and `pnpm` to use in one of 3 places, in order:
+
+1. It looks for a `package.json` file in the same directory from which the script was invoked. If
+that file has an `"engines"` field, it'll read the `node` version from either `engines.hnvm` or
+`engines.node`, and the `pnpm` version from `engines.pnpm`.
+2. It checks for an `HNVM_NODE_VER` and `HNVM_PNPM_VER` environment variable.
+3. It falls back to the defaults declared in the `.env` file baked into `hnvm` itself
+
+If semver ranges are provided instead of exact versions, `hnvm` will perform curl requests to
+resolve those to an exact version. However you'll get a warning about this since it could slow down
+execution time from the async request, or it might even fail to work at all if the curl requests
+fail to load.
+
+To try to mitigate this slowdown, semver range results are cached locally. The default is 60s but
+you can control this by setting the `HNVM_RANGE_CACHE` environment variable.
