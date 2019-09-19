@@ -11,11 +11,12 @@ done
 script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
 export $(egrep -v '^#' $script_dir/../.env | xargs)
-HNVM_RANGE_CACHE=${HNVM_RANGE_CACHE:-$DEFAULT_HNVM_RANGE_CACHE}
+source "$script_dir/output.sh"
 
 jq_bin="$script_dir/jq/jq"
 pkg_json="$PWD/package.json"
-echo "package.json $pkg_json"
+range_cache_secs=${HNVM_RANGE_CACHE:-$DEFAULT_HNVM_RANGE_CACHE}
+output=
 
 # 1. Try version from package.json engines field
 if [[ -f "$pkg_json" ]]; then
@@ -54,10 +55,10 @@ if [[ ! "$node_ver" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
   mkdir -p "$(dirname $cache_file)"
 
   # Cache result for 60s
-  if [ -f $cache_file ] && [ "$(( $(date +"%s") - $HNVM_RANGE_CACHE ))" -le "$(date -r $cache_file +"%s")" ]; then
+  if [ -f $cache_file ] && [ "$(( $(date +"%s") - $range_cache_secs ))" -le "$(date -r $cache_file +"%s")" ]; then
     node_ver="$(cat $cache_file)"
   else
-    echo -e $'\e[33mWarning\e[0m: Resolving node version range "'"$node_ver"'" is slower than providing an exact version.'
+    echo -e $'\e[33mWarning\e[0m: Resolving node version range "'"$node_ver"'" is slower than providing an exact version.' > $COMMAND_OUTPUT
 
     node_ver="$(curl https://semver.io/node/resolve/$node_ver --silent)"
     echo $node_ver > $cache_file

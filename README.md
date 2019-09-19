@@ -43,7 +43,7 @@ node main.js # Echo's: "Node version v12.10.0
 
 ### Download Path
 
-By default, `hnvm` will download node and pnpm binaries to `~/.hnvm`. To customize this path, simply
+By default, `hnvm` will download node and `pnpm` binaries to `~/.hnvm`. To customize this path, simply
 set the `HNVM_PATH` environment variable, either by exporting it or setting it in your profile:
 
 ```sh
@@ -67,3 +67,16 @@ fail to load.
 
 To try to mitigate this slowdown, semver range results are cached locally. The default is 60s but
 you can control this by setting the `HNVM_RANGE_CACHE` environment variable.
+
+### Silencing output
+
+By default, `hnvm` will output information about the current version of node running, and any
+download statuses if a new version is being downloaded so that you know exactly what's going on. If
+you don't want this output, simply set the `HNVM_SILENCE_OUTPUT` environment variable to true to
+have this output redirected to `/dev/null`.
+
+## Why Not Just Use [NVM](https://github.com/nvm-sh/nvm)
+
+Because `nvm` doesn't support [`fish`](https://fish.sh) 😅. Additionally, it's gotten a bit too
+bloated by trying to do too many things. HNVM is focused on using and running node at a specific
+version if declared, not in having multiple environments globally.
