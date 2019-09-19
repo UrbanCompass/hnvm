@@ -4,6 +4,7 @@
   "version": "2.0.0-beta.6",
   "license": "UNLICENSED",
   "description": "Hermetically sealed versions of node and pnpm.",
+  "repository": "git@github.com:UrbanCompass/hnvm.git",
   "engines": {
     "node": "12.10.0",
     "pnpm": "3.8.1"
