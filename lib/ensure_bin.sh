@@ -64,7 +64,7 @@ if [[ ! -x "$node_bin" ]]; then
   download_node
 fi
 
-if [[ ! -x "$pnpm_bin" || "$(${pnpm_bin} -v)" != $pnpm_ver ]]; then
+if [[ "$0" == *pnpm || "$0" == *pnpx ]] && [[ ! -x "$pnpm_bin" || "$(${node_bin} ${pnpm_bin} -v)" != $pnpm_ver ]]; then
   download_pnpm
 fi
 
