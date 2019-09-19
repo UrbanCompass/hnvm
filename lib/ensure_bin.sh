@@ -12,7 +12,7 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
 source "$script_dir/versions.sh"
 
-HNVM_PATH="${HNVM_PATH:-$script_dir/../.hnvm}"
+export HNVM_PATH="${HNVM_PATH:-$HOME/.hnvm}"
 
 node_path="$HNVM_PATH/$node_ver"
 node_bin="$node_path/bin/node"
