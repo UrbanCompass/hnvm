@@ -13,7 +13,9 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 export $(egrep -v '^#' $script_dir/../.env | xargs)
 export HNVM_PATH="${HNVM_PATH:-$HOME/.hnvm}"
 
+source "$script_dir/output.sh"
 source "$script_dir/versions.sh"
+source "$script_dir/colors.sh"
 
 node_path="$HNVM_PATH/$node_ver"
 node_bin="$node_path/bin/node"
@@ -36,11 +38,26 @@ function download_node() {
   rm -rf "${node_path}"
   mkdir -p "${node_path}"
 
-  curl https://nodejs.org/dist/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz | tar xz -C ${node_path} --strip-components=1
+  blue "Downloading Node v$node_ver"> $COMMAND_OUTPUT
+
+  if [[ "$HNVM_SILENCE_OUTPUT" == "true" ]]; then
+    curl https://nodejs.org/dist/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz --silent |
+      tar xz -C ${node_path} --strip-components=1 > $COMMAND_OUTPUT
+  else
+    curl https://nodejs.org/dist/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz |
+      tar xz -C ${node_path} --strip-components=1 > $COMMAND_OUTPUT
+  fi
 }
 
 function download_pnpm() {
-  curl -L https://unpkg.com/@pnpm/self-installer | PNPM_VERSION=$pnpm_ver ${node_bin}
+  blue "Downloading Pnpm v$pnpm_ver" > $COMMAND_OUTPUT
+  if [[ "$HNVM_SILENCE_OUTPUT" == "true" ]]; then
+    curl -L https://unpkg.com/@pnpm/self-installer --silent |
+      PNPM_VERSION=$pnpm_ver ${node_bin} > $COMMAND_OUTPUT
+  else
+    curl -L https://unpkg.com/@pnpm/self-installer |
+      PNPM_VERSION=$pnpm_ver ${node_bin} > $COMMAND_OUTPUT
+  fi
 }
 
 if [[ ! -x "$node_bin" ]]; then
@@ -50,3 +67,5 @@ fi
 if [[ ! -x "$pnpm_bin" || "$(${pnpm_bin} -v)" != $pnpm_ver ]]; then
   download_pnpm
 fi
+
+blue "Using hermetic NodeJS v$node_ver" > $COMMAND_OUTPUT
