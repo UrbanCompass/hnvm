@@ -10,11 +10,11 @@ while [ -h "$source" ]; do # resolve $source until the file is no longer a symli
 done
 script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
-jq_bin="$script_dir/../jq/jq"
+jq_bin="$script_dir/jq/jq"
 
 pkg_json="$PWD/package.json"
 if [[ ! -f "$pkg_json" ]]; then # Default to hnvm-global package.json for versions
-  pkg_json="$script_dir/../../package.json"
+  pkg_json="$script_dir/../package.json"
 fi
 
 node_ver="$(cat $pkg_json | $jq_bin -r '.engines.hnvm')"
