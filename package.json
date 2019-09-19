@@ -1,0 +1,18 @@
+{
+  "name": "@uc/hnvm",
+  "author": "Joe Schmitt <joe@compass.com>",
+  "version": "2.0.0-beta.6",
+  "license": "UNLICENSED",
+  "description": "Hermetically sealed versions of node and pnpm.",
+  "engines": {
+    "node": "12.10.0",
+    "pnpm": "3.8.1"
+  },
+  "bin": {
+    "node": "bin/node",
+    "npm": "bin/npm",
+    "npx": "bin/npx",
+    "pnpm": "bin/pnpm",
+    "pnpx": "bin/pnpx"
+  }
+}
