@@ -11,14 +11,12 @@ packages, and upgrades required by one package don't affect another.
 
 ## Installation
 
-If you already have `npm` installed globally, you can start using hnvm instead:
-```sh
-npm i -g @uc/hnvm
-```
+HNVM is distributed via [Homebrew](https://brew.sh) inside the
+[`UrbanCompass/versions` tap](https://github.com/UrbanCompass/homebrew-versions):
 
-Otherwise, you can run the following install script:
 ```sh
-# Todo: install script here. Probably a cURL command? ¯\_(ツ)_/¯
+brew tap UrbanCompass/versions
+brew install hnvm
 ```
 
 ## Usage
