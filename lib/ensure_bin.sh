@@ -22,6 +22,9 @@ pnpm_path="$HNVM_PATH/pnpm"
 pnpm_bin="$pnpm_path/lib/bin/pnpm.js"
 pnpx_bin="$pnpm_path/lib/bin/pnpx.js"
 
+yarn_path="$HNVM_PATH/yarn"
+yarn_bin="$yarn_path/bin/yarn.js"
+
 function download_node() {
   platform=
   if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -48,6 +51,9 @@ function download_node() {
 }
 
 function download_pnpm() {
+  rm -rf "${pnpm_path}"
+  mkdir -p "${pnpm_path}"
+
   blue "Downloading pnpm v$pnpm_ver to $pnpm_path" > $COMMAND_OUTPUT
 
   if [[ "$HNVM_QUIET" == "true" ]]; then
@@ -59,12 +65,31 @@ function download_pnpm() {
   fi
 }
 
+function download_yarn() {
+  rm -rf "${yarn_path}"
+  mkdir -p "${yarn_path}"
+
+  blue "Downloading yarn v$yarn_ver to $yarn_path" > $COMMAND_OUTPUT
+
+  if [[ "$HNVM_QUIET" == "true" ]]; then
+    curl -L https://yarnpkg.com/downloads/$yarn_ver/yarn-v$yarn_ver.tar.gz --silent |
+      tar xz -C ${yarn_path} --strip-components=1 > $COMMAND_OUTPUT
+  else
+    curl -L https://yarnpkg.com/downloads/$yarn_ver/yarn-v$yarn_ver.tar.gz |
+      tar xz -C ${yarn_path} --strip-components=1 > $COMMAND_OUTPUT
+  fi
+}
+
 if [[ ! -x "$node_bin" ]]; then
   download_node
 fi
 
 if [[ "$0" == *pnpm || "$0" == *pnpx ]] && [[ ! -x "$pnpm_bin" || "$(${node_bin} ${pnpm_bin} -v)" != $pnpm_ver ]]; then
   download_pnpm
+fi
+
+if [[ "$0" == *yarn ]] && [[ ! -x "$yarn_bin" || "$(${node_bin} ${yarn_bin} -v)" != $yarn_ver ]]; then
+  download_yarn
 fi
 
 blue "Using Hermetic NodeJS v$node_ver" > $COMMAND_OUTPUT
