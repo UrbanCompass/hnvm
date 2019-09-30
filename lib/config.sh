@@ -72,8 +72,6 @@ function resolve_ver() {
   local ver=$2
   local cache_file="$script_dir/../.tmp/$name/$ver"
 
-  echo "cache_file $cache_file"
-
   if [[ ! "$ver" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
     mkdir -p "$(dirname $cache_file)"
 
