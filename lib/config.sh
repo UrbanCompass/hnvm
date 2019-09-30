@@ -61,18 +61,38 @@ if [[ -z "$pnpm_ver" || "$pnpm_ver" == "null" ]]; then
   pnpm_ver=$HNVM_PNPM;
 fi
 
-# Resolve an exact node version if a range was given
-if [[ ! "$node_ver" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
-  cache_file="$script_dir/../../.tmp/node_ver/$node_ver"
-  mkdir -p "$(dirname $cache_file)"
+# Resolve an exact version when a semver range is given. Queries results from the npm registry.
+#
+# $1: Name of the package in the npm registry
+# $2: Semver range
+#
+# Outputs results to a variable named "resolve_ver_result".
+function resolve_ver() {
+  local name=$1
+  local ver=$2
+  local cache_file="$script_dir/../.tmp/$name/$ver"
 
-  # Cache result for 60s
-  if [ -f $cache_file ] && [ "$(( $(date +"%s") - $HNVM_RANGE_CACHE ))" -le "$(date -r $cache_file +"%s")" ]; then
-    node_ver="$(cat $cache_file)"
-  else
-    echo -e $'\e[33mWarning\e[0m: Resolving node version range "'"$node_ver"'" is slower than providing an exact version.' > $COMMAND_OUTPUT
+  echo "cache_file $cache_file"
 
-    node_ver="$(curl https://semver.io/node/resolve/$node_ver --silent)"
-    echo $node_ver > $cache_file
+  if [[ ! "$ver" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
+    mkdir -p "$(dirname $cache_file)"
+
+    # Cache result
+    if [ -f $cache_file ] && [ "$(( $(date +"%s") - $HNVM_RANGE_CACHE ))" -le "$(date -r $cache_file +"%s")" ]; then
+      ver="$(cat $cache_file)"
+    else
+      echo -e $'\e[33mWarning\e[0m: Resolving '$name' version range "'"$ver"'" is slower than providing an exact version.' > $COMMAND_OUTPUT
+
+      ver="$(curl http://registry.npmjs.org/$name/$ver --silent | $jq_bin -r '.version')" > $COMMAND_OUTPUT
+      echo $ver > $cache_file
+    fi
   fi
-fi
+
+  resolve_ver_result=$ver
+}
+
+resolve_ver "node" $node_ver
+node_ver=$resolve_ver_result
+
+resolve_ver "pnpm" $pnpm_ver
+pnpm_ver=$resolve_ver_result
