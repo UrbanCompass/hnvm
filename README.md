@@ -2,12 +2,12 @@
 
 Hermetically sealed versions of [node](https://npmjs.org) and [pnpm](https://pnpm.js.org).
 
-Instead of relying on the version of `node`, `npm`, and `pnpm` each individual developer or machine
-has installed locally, packages use a system we've named HNVM, which stands for Hermetic Node
-Version Manager. Having our `node` binaries be hermetic means each app or package defines what
+Instead of relying on the version of `node`, `npm`, `pnpm`, etc. each individual developer or
+machine has installed locally, packages use a system we've named HNVM, which stands for Hermetic
+Node Version Manager. Having our `node` binaries be hermetic means each app or package defines what
 version of `node` they depend on. That version is installed and used to run whenever the package
-runs scripts in `node`, `npm`, and `pnpm`. This ensures that everyone's systems output consistent
-packages, and upgrades required by one package don't affect another.
+runs scripts in `node`, `npm`, `pnpm`, and `yarn`. This ensures that everyone's systems output
+consistent packages, and upgrades required by one package don't affect another.
 
 ## Installation
 
@@ -22,16 +22,19 @@ brew tap UrbanCompass/versions git@github.com:UrbanCompass/homebrew-versions.git
 
 brew install hnvm
 
-# To install and enable pnpm hermetically as well
+# To install and enable pnpm hermetically
 brew install hnvm --with-pnpm
+
+# Or if you prefer to use yarn hermetically
+brew install hnvm --with-yarn
 ```
 
 ## Usage
 
-HNVM reads the version of `node` and `pnpm` set in your `package.json` file' `"engines"` field. If
+HNVM reads the version of `node`/`pnpm`/`yarn` set in your `package.json` file' `"engines"` field. If
 no version is set, it will default to the current versions set in HNVM's own `package.json`. Unlike
 HNVM 1.0, you don't have to find any particular bash script to run HNVM. Just use the regular
-`node`, `npm`, and `pnpm` commands you're used to from anywhere on your computer. If you run it
+`node`, `npm`, etc. commands you're used to from anywhere on your computer. If you run it
 next to a `package.json` file, it will read the engines field. If not, it'll default to the global
 version.
 
@@ -61,6 +64,7 @@ The `.hnvmrc` files are all simple key/value pairs prepended with `HNVM_`:
 HNVM_PATH=/path/to/.hnvm
 HNVM_NODE=10.0.0
 HNVM_PNPM=3.0.0
+HNVM_YARN=1.19.0
 ```
 
 Node and PNPM versions configured in `package.json` files go in either the `"engines"` field or an
@@ -71,7 +75,8 @@ Node and PNPM versions configured in `package.json` files go in either the `"eng
   "version": "1.0.0",
   "engines": {
     "node": "10.0.0",
-    "pnpm": "3.0.0"
+    "pnpm": "3.0.0",
+    "yarn": "1.19.0"
   },
   "hnvm": {
     "node": "11.0.0" // This overrules any versions set in "engines"
@@ -90,6 +95,7 @@ prefix, except for the path:
   "hnvm": {
     "node": "11.0.0"
     "pnpm": "3.1.0"
+    "yarn": "1.19.0",
     "quiet": true,
   }
 }
@@ -102,12 +108,12 @@ The full list of config options are detailed below.
 Location on disk to download binaries to, defaulting to an `.hnvm` directory in your `$HOME`
 directory.
 
-### `HNVM_NODE` and `HNVM_PNPM` (Defaults to `latest`)
+### `HNVM_NODE`, `HNVM_PNPM`, `HNVM_YARN` (Defaults to `latest`)
 
-Version of Node and PNPM to use. If semver ranges are provided instead of exact versions (e.g. the
-defaults are set to `latest`), HNVM will perform curl requests to resolve those to an exact version.
-However you'll get a warning about this since it could slow down execution time from the async
-request, or it might even fail to work at all if the curl requests fail to load.
+Version of `node`/`pnpm`/`yarn` to use. If semver ranges are provided instead of exact versions
+(e.g. the defaults are set to `latest`), HNVM will perform curl requests to resolve those to an
+exact version. However you'll get a warning about this since it could slow down execution time from
+the async request, or it might even fail to work at all if the curl requests fail to load.
 
 It's best to create an `.hnvmrc` file in your home directory and set the versions to exact versions.
 
