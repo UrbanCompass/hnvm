@@ -47,8 +47,8 @@ node main.js # Echo's: "Node version v12.10.0
 
 HNVM reads its configuration from one of the following places, in order from highest to lowest
 priority:
-1. The `package.json` file in the current process working directory (`$PWD/.hnvmrc`)
-2. An `.hnvmrc` file in the `PWD`
+1. The `package.json` file in the current process working directory (`$PWD/package.json`)
+2. An `.hnvmrc` file in the `PWD` (`$PWD/.hnvmrc`)
 3. An `.hnvmrc` file at the root of your git repo (if running in a git repo)
 4. An `.hnvmrc` file in your home directory (`~/.hnvmrc`)
 5. The `.hnvmrc` file that ships with the current version of HNVM
