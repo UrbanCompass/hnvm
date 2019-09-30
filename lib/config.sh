@@ -41,7 +41,11 @@ pkg_json="$PWD/package.json"
 
 # Try version from package.json engines field
 if [[ -f "$pkg_json" ]]; then
-  if [[ -z "$node_ver" && -f "$pkg_json" ]]; then
+  if [[ -z "$node_ver" ]]; then
+    node_ver="$(cat $pkg_json | $jq_bin -r '.hnvm.node')"
+  fi
+
+  if [[ "$node_ver" == "null" ]]; then
     node_ver="$(cat $pkg_json | $jq_bin -r '.engines.hnvm')"
   fi
 
@@ -49,7 +53,10 @@ if [[ -f "$pkg_json" ]]; then
     node_ver="$(cat $pkg_json | $jq_bin -r '.engines.node')"
   fi
 
-  pnpm_ver="$(cat $pkg_json | $jq_bin -r '.engines.pnpm')"
+  pnpm_ver="$(cat $pkg_json | $jq_bin -r '.hnvm.pnpm')"
+  if [[ "$pnpm_ver" == "null" ]]; then
+    pnpm_ver="$(cat $pkg_json | $jq_bin -r '.engines.pnpm')"
+  fi
 fi
 
 # Fall back to env var
