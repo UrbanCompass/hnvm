@@ -92,5 +92,7 @@ function resolve_ver() {
 resolve_ver "node" $node_ver
 node_ver=$resolve_ver_result
 
-resolve_ver "pnpm" $pnpm_ver
-pnpm_ver=$resolve_ver_result
+if [[ "$0" == *pnpm || "$0" == *pnpx ]]; then
+  resolve_ver "pnpm" $pnpm_ver
+  pnpm_ver=$resolve_ver_result
+fi
