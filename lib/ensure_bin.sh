@@ -10,12 +10,8 @@ while [ -h "$source" ]; do # resolve $source until the file is no longer a symli
 done
 script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
-export $(egrep -v '^#' $script_dir/../.env | xargs)
-export HNVM_PATH="${HNVM_PATH:-$HOME/.hnvm}"
-
-source "$script_dir/output.sh"
-source "$script_dir/versions.sh"
 source "$script_dir/colors.sh"
+source "$script_dir/config.sh"
 
 node_path="$HNVM_PATH/$node_ver"
 node_bin="$node_path/bin/node"
@@ -40,7 +36,7 @@ function download_node() {
 
   blue "Downloading Node v$node_ver"> $COMMAND_OUTPUT
 
-  if [[ "$HNVM_SILENCE_OUTPUT" == "true" ]]; then
+  if [[ "$HNVM_QUIET" == "true" ]]; then
     curl https://nodejs.org/dist/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz --silent |
       tar xz -C ${node_path} --strip-components=1 > $COMMAND_OUTPUT
   else
@@ -51,7 +47,7 @@ function download_node() {
 
 function download_pnpm() {
   blue "Downloading Pnpm v$pnpm_ver" > $COMMAND_OUTPUT
-  if [[ "$HNVM_SILENCE_OUTPUT" == "true" ]]; then
+  if [[ "$HNVM_QUIET" == "true" ]]; then
     curl -L https://unpkg.com/@pnpm/self-installer --silent |
       PNPM_VERSION=$pnpm_ver ${node_bin} > $COMMAND_OUTPUT
   else
