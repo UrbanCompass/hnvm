@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -e
+
+# The exposed bin files are symlinked into the user's $PATH, so we need to make our way back to
+# the original path location to understand where the rest of this package's files are installed
+source="${BASH_SOURCE[0]}"
+while [ -h "$source" ]; do # resolve $source until the file is no longer a symlink
+  script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
+  source="$(readlink "$source")"
+  [[ $source != /* ]] && source="$script_dir/$source"
+done
+script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
+
+source "$script_dir/../lib/ensure_bin.sh"
+
+exec ${node_bin} ${yarn_bin} "$@"

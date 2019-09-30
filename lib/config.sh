@@ -57,6 +57,11 @@ if [[ -f "$pkg_json" ]]; then
   if [[ "$pnpm_ver" == "null" ]]; then
     pnpm_ver="$(cat $pkg_json | $jq_bin -r '.engines.pnpm')"
   fi
+
+  yarn_ver="$(cat $pkg_json | $jq_bin -r '.hnvm.yarn')"
+  if [[ "$yarn_ver" == "null" ]]; then
+    yarn_ver="$(cat $pkg_json | $jq_bin -r '.engines.yarn')"
+  fi
 fi
 
 # Fall back to env var
@@ -66,6 +71,10 @@ fi
 
 if [[ -z "$pnpm_ver" || "$pnpm_ver" == "null" ]]; then
   pnpm_ver=$HNVM_PNPM;
+fi
+
+if [[ -z "$yarn_ver" || "$yarn_ver" == "null" ]]; then
+  yarn_ver=$HNVM_YARN;
 fi
 
 # Resolve an exact version when a semver range is given. Queries results from the npm registry.
@@ -102,4 +111,9 @@ node_ver=$resolve_ver_result
 if [[ "$0" == *pnpm || "$0" == *pnpx ]]; then
   resolve_ver "pnpm" $pnpm_ver
   pnpm_ver=$resolve_ver_result
+fi
+
+if [[ "$0" == *yarn ]]; then
+  resolve_ver "yarn" $yarn_ver
+  yarn_ver=$resolve_ver_result
 fi
