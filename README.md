@@ -21,6 +21,9 @@ brew tap UrbanCompass/versions
 brew tap UrbanCompass/versions git@github.com:UrbanCompass/homebrew-versions.git
 
 brew install hnvm
+
+# To install and enable pnpm hermetically as well
+brew install hnvm --with-pnpm
 ```
 
 ## Usage
