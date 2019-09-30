@@ -1,5 +1,6 @@
 HNVM_PATH=~/.hnvm
 HNVM_NODE=latest
 HNVM_PNPM=latest
+HNVM_YARN=latest
 HNVM_RANGE_CACHE=60
 HNVM_QUIET=false
