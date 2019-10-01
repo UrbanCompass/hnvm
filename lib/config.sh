@@ -12,6 +12,14 @@ while [ -h "$source" ]; do # resolve $source until the file is no longer a symli
 done
 script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
+# Store any existing HNVM_* env vars to re-apply after reading hnvmrc files
+hnvm_exports=()
+while IFS='=' read -r name value ; do
+  if [[ $name == 'HNVM_'* ]]; then
+    hnvm_exports+=("$name=${!name}")
+  fi
+done < <(env)
+
 # Read and export rcfile variables from configured directories
 rc_dirs="$script_dir/..;$HOME;.git;$PWD"
 IFS=';' read -ra dirs_array <<< "$rc_dirs"
@@ -29,6 +37,11 @@ for i in "${dirs_array[@]}"; do
   if [ -f "$rc_file" ]; then
     export $(egrep -v '^#' $rc_file | sed 's#~#'$HOME'#g' | xargs)
   fi
+done
+
+# Re-apply (and override) HNVM_* env vars from profile
+for declaration in "${hnvm_exports[@]}"; do
+  declare "$declaration"
 done
 
 export COMMAND_OUTPUT=/dev/stdout
