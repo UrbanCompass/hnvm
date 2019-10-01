@@ -58,7 +58,7 @@ if [[ -f "$pkg_json" ]]; then
   fi
 
 
-  if [[ ! -z  "$pnpm_ver" ]]; then
+  if [[ -z "$pnpm_ver" ]]; then
     pnpm_ver="$(cat $pkg_json | jq -r '.hnvm.pnpm')"
 
     if [[ "$pnpm_ver" == "null" ]]; then
@@ -66,7 +66,7 @@ if [[ -f "$pkg_json" ]]; then
     fi
   fi
 
-  if [[ ! -z  "$yarn_ver" ]]; then
+  if [[ -z "$yarn_ver" ]]; then
     yarn_ver="$(cat $pkg_json | jq -r '.hnvm.yarn')"
 
     if [[ "$yarn_ver" == "null" ]]; then
