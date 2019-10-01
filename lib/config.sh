@@ -36,31 +36,30 @@ if [ "$HNVM_QUIET" == "true" ]; then
   COMMAND_OUTPUT=/dev/null
 fi
 
-jq_bin="$script_dir/jq/jq"
 pkg_json="$PWD/package.json"
 
 # Try version from package.json engines field
 if [[ -f "$pkg_json" ]]; then
   if [[ -z "$node_ver" ]]; then
-    node_ver="$(cat $pkg_json | $jq_bin -r '.hnvm.node')"
+    node_ver="$(cat $pkg_json | jq -r '.hnvm.node')"
   fi
 
   if [[ "$node_ver" == "null" ]]; then
-    node_ver="$(cat $pkg_json | $jq_bin -r '.engines.hnvm')"
+    node_ver="$(cat $pkg_json | jq -r '.engines.hnvm')"
   fi
 
   if [[ "$node_ver" == "null" ]]; then
-    node_ver="$(cat $pkg_json | $jq_bin -r '.engines.node')"
+    node_ver="$(cat $pkg_json | jq -r '.engines.node')"
   fi
 
-  pnpm_ver="$(cat $pkg_json | $jq_bin -r '.hnvm.pnpm')"
+  pnpm_ver="$(cat $pkg_json | jq -r '.hnvm.pnpm')"
   if [[ "$pnpm_ver" == "null" ]]; then
-    pnpm_ver="$(cat $pkg_json | $jq_bin -r '.engines.pnpm')"
+    pnpm_ver="$(cat $pkg_json | jq -r '.engines.pnpm')"
   fi
 
-  yarn_ver="$(cat $pkg_json | $jq_bin -r '.hnvm.yarn')"
+  yarn_ver="$(cat $pkg_json | jq -r '.hnvm.yarn')"
   if [[ "$yarn_ver" == "null" ]]; then
-    yarn_ver="$(cat $pkg_json | $jq_bin -r '.engines.yarn')"
+    yarn_ver="$(cat $pkg_json | jq -r '.engines.yarn')"
   fi
 fi
 
@@ -97,7 +96,7 @@ function resolve_ver() {
     else
       echo -e $'\e[33mWarning\e[0m: Resolving '$name' version range "'"$ver"'" is slower than providing an exact version.' > $COMMAND_OUTPUT
 
-      ver="$(curl http://registry.npmjs.org/$name/$ver --silent | $jq_bin -r '.version')" > $COMMAND_OUTPUT
+      ver="$(curl http://registry.npmjs.org/$name/$ver --silent | jq -r '.version')" > $COMMAND_OUTPUT
       echo $ver > $cache_file
     fi
   fi
