@@ -12,13 +12,12 @@ while [ -h "$source" ]; do # resolve $source until the file is no longer a symli
 done
 script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
-# Store any existing HNVM_* env vars to re-apply after reading hnvmrc files
-hnvm_exports=()
-while IFS='=' read -r name value ; do
-  if [[ $name == 'HNVM_'* ]]; then
-    hnvm_exports+=("$name=${!name}")
-  fi
-done < <(env)
+export COMMAND_OUTPUT=/dev/stdout
+
+# Read env vars set in profile or at runtime
+node_ver="$HNVM_NODE"
+pnpm_ver="$HNVM_PNPM"
+yarn_ver="$HNVM_YARN"
 
 # Read and export rcfile variables from configured directories
 rc_dirs="$script_dir/..;$HOME;.git;$PWD"
@@ -39,40 +38,40 @@ for i in "${dirs_array[@]}"; do
   fi
 done
 
-# Re-apply (and override) HNVM_* env vars from profile
-for declaration in "${hnvm_exports[@]}"; do
-  declare "$declaration"
-done
-
-export COMMAND_OUTPUT=/dev/stdout
 if [ "$HNVM_QUIET" == "true" ]; then
   COMMAND_OUTPUT=/dev/null
 fi
 
-pkg_json="$PWD/package.json"
-
 # Try version from package.json engines field
+pkg_json="$PWD/package.json"
 if [[ -f "$pkg_json" ]]; then
   if [[ -z "$node_ver" ]]; then
     node_ver="$(cat $pkg_json | jq -r '.hnvm.node')"
+
+    if [[ "$node_ver" == "null" ]]; then
+      node_ver="$(cat $pkg_json | jq -r '.engines.hnvm')"
+    fi
+
+    if [[ "$node_ver" == "null" ]]; then
+      node_ver="$(cat $pkg_json | jq -r '.engines.node')"
+    fi
   fi
 
-  if [[ "$node_ver" == "null" ]]; then
-    node_ver="$(cat $pkg_json | jq -r '.engines.hnvm')"
+
+  if [[ ! -z  "$pnpm_ver" ]]; then
+    pnpm_ver="$(cat $pkg_json | jq -r '.hnvm.pnpm')"
+
+    if [[ "$pnpm_ver" == "null" ]]; then
+      pnpm_ver="$(cat $pkg_json | jq -r '.engines.pnpm')"
+    fi
   fi
 
-  if [[ "$node_ver" == "null" ]]; then
-    node_ver="$(cat $pkg_json | jq -r '.engines.node')"
-  fi
+  if [[ ! -z  "$yarn_ver" ]]; then
+    yarn_ver="$(cat $pkg_json | jq -r '.hnvm.yarn')"
 
-  pnpm_ver="$(cat $pkg_json | jq -r '.hnvm.pnpm')"
-  if [[ "$pnpm_ver" == "null" ]]; then
-    pnpm_ver="$(cat $pkg_json | jq -r '.engines.pnpm')"
-  fi
-
-  yarn_ver="$(cat $pkg_json | jq -r '.hnvm.yarn')"
-  if [[ "$yarn_ver" == "null" ]]; then
-    yarn_ver="$(cat $pkg_json | jq -r '.engines.yarn')"
+    if [[ "$yarn_ver" == "null" ]]; then
+      yarn_ver="$(cat $pkg_json | jq -r '.engines.yarn')"
+    fi
   fi
 fi
 

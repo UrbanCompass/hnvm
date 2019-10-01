@@ -117,6 +117,13 @@ the async request, or it might even fail to work at all if the curl requests fai
 
 It's best to create an `.hnvmrc` file in your home directory and set the versions to exact versions.
 
+If you want to temporarily override any of these values, you can override the env vars when your
+run the script:
+
+```sh
+env HNVM_NODE='12.0.0' node --version # v12.0.0
+```
+
 ### `HNVM_RANGE_CACHE` (Defaults to 60)
 
 To try to mitigate the slowdown above, semver range results are cached locally. The default is 60s
