@@ -117,13 +117,13 @@ the async request, or it might even fail to work at all if the curl requests fai
 
 It's best to create an `.hnvmrc` file in your home directory and set the versions to exact versions.
 
-### Range Cache (Defaults to 60)
+### `HNVM_RANGE_CACHE` (Defaults to 60)
 
 To try to mitigate the slowdown above, semver range results are cached locally. The default is 60s
 but you can control this by setting the `HNVM_RANGE_CACHE` environment variable. To disable the
 cache set the value to 0.
 
-### Quieting output (Defaults to `false`)
+### `HNVM_QUIET` (Defaults to `false`)
 
 HNVM outputs information about the current version of node running, and any download statuses if a
 new version is being downloaded so that you know exactly what's going on. If you don't want this
@@ -132,6 +132,6 @@ output, set the `HNVM_QUIET` environment variable to `true` to have this output 
 
 ## Why Not Just Use [NVM](https://github.com/nvm-sh/nvm)
 
-Because `nvm` doesn't support [`fish`](https://fish.sh) 😅. Additionally, it's gotten a bit too
-bloated by trying to do too many things. HNVM is focused on using and running node at a specific
-version if declared, not in having multiple environments globally.
+Because `nvm` doesn't support [`fish`](https://fish.sh) 😅. This project also focuses on individual
+projects or packages declaring versions of node to use, as opposed to switching globally between
+different versions. It results in a simpler setup with far less code.
