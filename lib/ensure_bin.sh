@@ -18,11 +18,11 @@ node_bin="$node_path/bin/node"
 npm_bin="$node_path/bin/npm"
 npx_bin="$node_path/bin/npx"
 
-pnpm_path="$HNVM_PATH/pnpm"
+pnpm_path="$HNVM_PATH/pnpm/$pnpm_ver"
 pnpm_bin="$pnpm_path/lib/bin/pnpm.js"
 pnpx_bin="$pnpm_path/lib/bin/pnpx.js"
 
-yarn_path="$HNVM_PATH/yarn"
+yarn_path="$HNVM_PATH/yarn/$yarn_ver"
 yarn_bin="$yarn_path/bin/yarn.js"
 
 function download_node() {
@@ -39,7 +39,7 @@ function download_node() {
   rm -rf "${node_path}"
   mkdir -p "${node_path}"
 
-  blue "Downloading node v$node_ver to $node_path" > $COMMAND_OUTPUT
+  blue "Downloading node v$node_ver to $HNVM_PATH/node" > $COMMAND_OUTPUT
 
   if [[ "$HNVM_QUIET" == "true" ]]; then
     curl https://nodejs.org/dist/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz --silent |
@@ -54,7 +54,7 @@ function download_pnpm() {
   rm -rf "${pnpm_path}"
   mkdir -p "${pnpm_path}"
 
-  blue "Downloading pnpm v$pnpm_ver to $pnpm_path" > $COMMAND_OUTPUT
+  blue "Downloading pnpm v$pnpm_ver to $HNVM_PATH/pnpm" > $COMMAND_OUTPUT
 
   if [[ "$HNVM_QUIET" == "true" ]]; then
     curl -L https://unpkg.com/@pnpm/self-installer --silent |
@@ -69,7 +69,7 @@ function download_yarn() {
   rm -rf "${yarn_path}"
   mkdir -p "${yarn_path}"
 
-  blue "Downloading yarn v$yarn_ver to $yarn_path" > $COMMAND_OUTPUT
+  blue "Downloading yarn v$yarn_ver to $HNVM_PATH/yarn" > $COMMAND_OUTPUT
 
   if [[ "$HNVM_QUIET" == "true" ]]; then
     curl -L https://yarnpkg.com/downloads/$yarn_ver/yarn-v$yarn_ver.tar.gz --silent |
