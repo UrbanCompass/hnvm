@@ -84,11 +84,11 @@ if [[ ! -x "$node_bin" ]]; then
   download_node
 fi
 
-if [[ "$0" == *pnpm || "$0" == *pnpx ]] && [[ "$(${node_bin} ${pnpm_bin} -v)" != $pnpm_ver ]]; then
+if [[ "$0" == *pnpm || "$0" == *pnpx ]] && [[ ! -f "$pnpm_bin" || "$(${node_bin} ${pnpm_bin} -v)" != $pnpm_ver ]]; then
   download_pnpm
 fi
 
-if [[ "$0" == *yarn ]] && [[ "$(${node_bin} ${yarn_bin} -v)" != $yarn_ver ]]; then
+if [[ "$0" == *yarn ]] && [[ ! -f "$yarn_binrm " || "$(${node_bin} ${yarn_bin} -v)" != $yarn_ver ]]; then
   download_yarn
 fi
 
