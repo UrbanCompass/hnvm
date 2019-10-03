@@ -39,7 +39,7 @@ function download_node() {
   rm -rf "${node_path}"
   mkdir -p "${node_path}"
 
-  blue "Downloading node v$node_ver to $HNVM_PATH" > $COMMAND_OUTPUT
+  blue "Downloading node v$node_ver to $node_path" > $COMMAND_OUTPUT
 
   if [[ "$HNVM_QUIET" == "true" ]]; then
     curl https://nodejs.org/dist/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz --silent |
