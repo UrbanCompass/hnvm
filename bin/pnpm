@@ -15,7 +15,7 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 source "$script_dir/../lib/ensure_bin.sh"
 
 if [[ $1 == "marie-kondo" || $1 == "kondo" || $1 == "mk" ]]; then
-  source "$script_dir/../lib/kondo.sh"
+  source "$script_dir/../lib/kondo.sh" ${node_bin} ${pnpm_bin}
 else
   exec ${node_bin} ${pnpm_bin} "$@"
 fi
