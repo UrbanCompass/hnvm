@@ -20,7 +20,8 @@ pnpm_ver="$HNVM_PNPM"
 yarn_ver="$HNVM_YARN"
 
 # Read and export rcfile variables from configured directories
-rc_dirs="$script_dir/..;$HOME;.git;$PWD"
+exports=''
+rc_dirs="$PWD;.git;$HOME;$script_dir/.."
 IFS=';' read -ra dirs_array <<< "$rc_dirs"
 for i in "${dirs_array[@]}"; do
   rc_file="$i/.hnvmrc"
@@ -33,8 +34,9 @@ for i in "${dirs_array[@]}"; do
     fi
   fi
 
-  if [ -f "$rc_file" ]; then
-    export $(egrep -v '^#' $rc_file | sed 's#~#'$HOME'#g' | xargs)
+  if [[ -f "$rc_file" && "$HNVM_NOFALLBACK" != "true" ]]; then
+    exports="$(cat $rc_file) $exports"
+    export $(echo "$exports" | egrep -v '^#'| sed 's#~#'$HOME'#g' | xargs)
   fi
 done
 
@@ -86,6 +88,22 @@ fi
 
 if [[ -z "$yarn_ver" || "$yarn_ver" == "null" ]]; then
   yarn_ver=$HNVM_YARN;
+fi
+
+# No fallback version(s) could be determined, error out for those missing
+if [[ -z "$pnpm_ver" && "$0" == *pnpm || "$0" == *pnpx ]]; then
+  red "No HNVM_PNPM version set. Please set a pnpm version."
+  exit 1
+fi
+
+if [[ -z "$yarn_ver" && "$0" == *yarn ]]; then
+  red "No HNVM_YARN version set. Please set a yarn version."
+  exit 1
+fi
+
+if [[ -z "$node_ver" ]]; then
+  red "No HNVM_NODE version set. Please set a Node version."
+  exit 1
 fi
 
 # Resolve an exact version when a semver range is given. Queries results from the npm registry.

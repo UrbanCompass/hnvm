@@ -67,7 +67,9 @@ HNVM_PNPM=3.0.0
 HNVM_YARN=1.19.0
 ```
 
-Node and PNPM versions configured in `package.json` files go in either the `"engines"` field or an
+The full list of config options are detailed below.
+
+Versions configured in `package.json` files go in either the `"engines"` field or an
 `"hnvm"` field, with the latter overriding the former:
 ```js
 {
@@ -84,24 +86,23 @@ Node and PNPM versions configured in `package.json` files go in either the `"eng
 }
 ```
 
-The `"hnvm"` field can contain any of the options set in the `.hnvmrc` files, without the `HNVM_`
-prefix, except for the path:
+The `"hnvm"` field can contain the same values as in the `"engines"` field. It's useful for when
+you want HNVM to be stricter than your engines. For example, your package might be compatible with a
+node version range, but HNVM itself runs at a specific version:
 
 ```js
 {
   "name": "some-package",
   "version": "1.0.0",
   },
+  "engines": {
+    "node": ">=10.0.0"
+  },
   "hnvm": {
     "node": "11.0.0"
-    "pnpm": "3.1.0"
-    "yarn": "1.19.0",
-    "quiet": true,
   }
 }
 ```
-
-The full list of config options are detailed below.
 
 ### `HNVM_PATH` (Defaults to `~/.hnvm`)
 
@@ -136,6 +137,27 @@ HNVM outputs information about the current version of node running, and any down
 new version is being downloaded so that you know exactly what's going on. If you don't want this
 output, set the `HNVM_QUIET` environment variable to `true` to have this output redirected to
 `/dev/null`.
+
+### `HNVM_NOFALLBACK` (Defaults to `false`)
+
+When set to true, HNVM will stop going up the tree to look for `.hnvmrc` files. This is useful in
+monorepo's if you want to enforce that your specific package's HNVM version is run and it doesn't
+end up falling back to a version outside of the repo.
+
+```sh
+# In package's .hnvmrc
+HNVM_NODE=11.0.0
+
+# In git root's .hnvmrc
+HNVM_NOFALLBACK=true
+
+# In HNVM default .hnvmrc
+HNVM_NODE=12.0.0
+```
+
+If I run `node --version` next to the package, I'll get `v11.0.0`. If I run it outside the package
+but still in the repo, I'll get an error asking to specify a node version instead of defaulting to
+node v12.0.0.
 
 ## Why Not Just Use [NVM](https://github.com/nvm-sh/nvm)
 

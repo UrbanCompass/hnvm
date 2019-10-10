@@ -13,6 +13,11 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 source "$script_dir/colors.sh"
 source "$script_dir/config.sh"
 
+# Set these defaults here instead of the rc file so that HNVM_NOFALLBACK never blocks these defaults
+HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
+HNVM_RANGE_CACHE=${HNVM_RANGE_CACHE:-60}
+HNVM_QUIET=${HNVM_QUIET:-false}
+
 node_path="$HNVM_PATH/node/$node_ver"
 node_bin="$node_path/bin/node"
 npm_bin="$node_path/bin/npm"
