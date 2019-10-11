@@ -91,7 +91,7 @@ if [[ -z "$yarn_ver" || "$yarn_ver" == "null" ]]; then
 fi
 
 # No fallback version(s) could be determined, error out for those missing
-if [[ -z "$pnpm_ver" && "$0" == *pnpm || "$0" == *pnpx ]]; then
+if [[ -z "$pnpm_ver" && ("$0" == *pnpm || "$0" == *pnpx) ]]; then
   red "No HNVM_PNPM version set. Please set a pnpm version."
   exit 1
 fi
