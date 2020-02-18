@@ -24,8 +24,8 @@ npm_bin="$node_path/bin/npm"
 npx_bin="$node_path/bin/npx"
 
 pnpm_path="$HNVM_PATH/pnpm/$pnpm_ver"
-pnpm_bin="$pnpm_path/lib/bin/pnpm.js"
-pnpx_bin="$pnpm_path/lib/bin/pnpx.js"
+pnpm_bin="$pnpm_path/bin/pnpm.js"
+pnpx_bin="$pnpm_path/bin/pnpx.js"
 
 yarn_path="$HNVM_PATH/yarn/$yarn_ver"
 yarn_bin="$yarn_path/bin/yarn.js"
