@@ -27,7 +27,7 @@ for i in "${dirs_array[@]}"; do
   rc_file="$i/.hnvmrc"
 
   if [[ $i == '.git' && ! -z "$(which git)" ]]; then
-    git_root="$(if [ "`git rev-parse --show-cdup`" != "" ]; then cd `git rev-parse --show-cdup`; pwd; fi;)"
+    git_root="$(if [ "`git rev-parse --show-cdup 2> /dev/null`" != "" ]; then cd `git rev-parse --show-cdup`; pwd; fi;)"
 
     if [[ ! -z "$git_root" && -f "$git_root/.hnvmrc" && ! -z "$(cat $git_root/.hnvmrc)" ]]; then
       rc_file="$git_root/.hnvmrc"
