@@ -138,6 +138,28 @@ new version is being downloaded so that you know exactly what's going on. If you
 output, set the `HNVM_QUIET` environment variable to `true` to have this output redirected to
 `/dev/null`.
 
+### `HNVM_NODE_DIST` (Defaults to `https://nodejs.org/dist`)
+
+Location of the NodeJS distribution files. If you provide a custom destination, you should ensure
+that the repository layout mirrors that of nodejs.org:
+```
+/node-v${node_ver}-${platform}-x64.tar.gz
+```
+
+### `HNVM_PNPM_REGISTRY` (Defaults to `https://registry.npmjs.org`)
+
+If using the `--with-pnpm` flag, `npm`-compatible registry to install `pnpm` from. Defaults to the
+public `npm` registry.
+
+### `HNVM_YARN_DIST` (Defaults to `https://yarnpkg.com/downloads`)
+
+If using the `--with-yarn` flag, the location from where to download `yarn` from. When providing a
+custom destination, you should ensure the layout mirrors that of `yarnpkg.com`:
+```
+/${yarn_ver}/yarn-v${yarn_ver}.tar.gz
+```
+
+
 ### `HNVM_NOFALLBACK` (Defaults to `false`)
 
 When set to true, HNVM will stop going up the tree to look for `.hnvmrc` files. This is useful in

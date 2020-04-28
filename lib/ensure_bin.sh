@@ -17,6 +17,9 @@ source "$script_dir/config.sh"
 HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
 HNVM_RANGE_CACHE=${HNVM_RANGE_CACHE:-60}
 HNVM_QUIET=${HNVM_QUIET:-false}
+HNVM_NODE_DIST=${HNVM_NODE_DIST:-'https://nodejs.org/dist'}
+HNVM_PNPM_REGISTRY=${HNVM_PNPM_REGISTRY:-'https://registry.npmjs.org'}
+HNVM_YARN_DIST=${HNVM_YARN_DIST:-'https://yarnpkg.com/downloads'}
 
 node_path="$HNVM_PATH/node/$node_ver"
 node_bin="$node_path/bin/node"
@@ -47,10 +50,10 @@ function download_node() {
   blue "Downloading node v$node_ver to $HNVM_PATH/node" > $COMMAND_OUTPUT
 
   if [[ "$HNVM_QUIET" == "true" ]]; then
-    curl https://nodejs.org/dist/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz --silent |
+    curl $HNVM_NODE_DIST/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz --silent |
       tar xz -C ${node_path} --strip-components=1 > $COMMAND_OUTPUT
   else
-    curl https://nodejs.org/dist/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz |
+    curl $HNVM_NODE_DIST/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz |
       tar xz -C ${node_path} --strip-components=1 > $COMMAND_OUTPUT
   fi
 }
@@ -63,10 +66,12 @@ function download_pnpm() {
 
   if [[ "$HNVM_QUIET" == "true" ]]; then
     curl -L https://unpkg.com/@pnpm/self-installer --silent |
-      PNPM_VERSION=$pnpm_ver PNPM_DEST=$pnpm_path ${node_bin} > $COMMAND_OUTPUT
+      PNPM_VERSION=$pnpm_ver PNPM_DEST=$pnpm_path ${node_bin} PNPM_REGISTRY=$HNVM_PNPM_REGISTRY >
+      $COMMAND_OUTPUT
   else
     curl -L https://unpkg.com/@pnpm/self-installer |
-      PNPM_VERSION=$pnpm_ver PNPM_DEST=$pnpm_path ${node_bin} > $COMMAND_OUTPUT
+      PNPM_VERSION=$pnpm_ver PNPM_DEST=$pnpm_path ${node_bin} PNPM_REGISTRY=$HNVM_PNPM_REGISTRY >
+      $COMMAND_OUTPUT
   fi
 }
 
@@ -77,10 +82,10 @@ function download_yarn() {
   blue "Downloading yarn v$yarn_ver to $HNVM_PATH/yarn" > $COMMAND_OUTPUT
 
   if [[ "$HNVM_QUIET" == "true" ]]; then
-    curl -L https://yarnpkg.com/downloads/$yarn_ver/yarn-v$yarn_ver.tar.gz --silent |
+    curl -L $HNVM_YARN_DIST/${yarn_ver}/yarn-v${yarn_ver}.tar.gz --silent |
       tar xz -C ${yarn_path} --strip-components=1 > $COMMAND_OUTPUT
   else
-    curl -L https://yarnpkg.com/downloads/$yarn_ver/yarn-v$yarn_ver.tar.gz |
+    curl -L $HNVM_YARN_DIST/${yarn_ver}/yarn-v${yarn_ver}.tar.gz |
       tar xz -C ${yarn_path} --strip-components=1 > $COMMAND_OUTPUT
   fi
 }
@@ -105,7 +110,7 @@ if [[ "$0" == *pnpm || "$0" == *pnpx ]] && [[ ! -f "$pnpm_bin" || "$(${node_bin}
   download_pnpm
 fi
 
-if [[ "$0" == *yarn ]] && [[ ! -f "$yarn_binrm " || "$(${node_bin} ${yarn_bin} -v)" != $yarn_ver ]]; then
+if [[ "$0" == *yarn ]] && [[ ! -f "$yarn_bin " || "$(${node_bin} ${yarn_bin} -v)" != $yarn_ver ]]; then
   download_yarn
 fi
 
