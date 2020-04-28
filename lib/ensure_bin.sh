@@ -85,6 +85,18 @@ function download_yarn() {
   fi
 }
 
+# Something's globally installing pnpm and pnpx, need to remove otherwise npm scripts won't use
+# hnvm and they'll use this globally installed one instead
+if [[ -f "$node_path/bin/pnpm" ]]; then
+  yellow "Found conflicting global install of pnpm, removing..." > $COMMAND_OUTPUT
+  rm "$node_path/bin/pnpm" > $COMMAND_OUTPUT
+fi
+
+if [[ -f "$node_path/bin/pnpx" ]]; then
+  yellow "Found conflicting global install of pnpx, removing..." > $COMMAND_OUTPUT
+  rm "$node_path/bin/pnpx" > $COMMAND_OUTPUT
+fi
+
 if [[ ! -x "$node_bin" ]]; then
   download_node
 fi
