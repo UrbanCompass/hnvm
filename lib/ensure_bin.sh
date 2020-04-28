@@ -66,11 +66,11 @@ function download_pnpm() {
 
   if [[ "$HNVM_QUIET" == "true" ]]; then
     curl -L https://unpkg.com/@pnpm/self-installer --silent |
-      PNPM_VERSION=$pnpm_ver PNPM_DEST=$pnpm_path ${node_bin} PNPM_REGISTRY=$HNVM_PNPM_REGISTRY > \
+      PNPM_VERSION=$pnpm_ver PNPM_DEST=$pnpm_path PNPM_REGISTRY=$HNVM_PNPM_REGISTRY ${node_bin} > \
       $COMMAND_OUTPUT
   else
     curl -L https://unpkg.com/@pnpm/self-installer |
-      PNPM_VERSION=$pnpm_ver PNPM_DEST=$pnpm_path ${node_bin} PNPM_REGISTRY=$HNVM_PNPM_REGISTRY > \
+      PNPM_VERSION=$pnpm_ver PNPM_DEST=$pnpm_path PNPM_REGISTRY=$HNVM_PNPM_REGISTRY ${node_bin} > \
       $COMMAND_OUTPUT
   fi
 }
