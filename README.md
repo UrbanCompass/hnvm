@@ -11,6 +11,8 @@ consistent packages, and upgrades required by one package don't affect another.
 
 ## Installation
 
+### [Homebrew](https://brew.sh)
+
 HNVM is distributed via [Homebrew](https://brew.sh) inside the
 [`UrbanCompass/versions` tap](https://github.com/UrbanCompass/homebrew-versions):
 
@@ -21,18 +23,22 @@ brew tap UrbanCompass/versions
 brew tap UrbanCompass/versions git@github.com:UrbanCompass/homebrew-versions.git
 
 brew install hnvm
-
-# To install and enable pnpm hermetically
-brew install hnvm --with-pnpm
-
-# Or if you prefer to use yarn hermetically
-brew install hnvm --with-yarn
 ```
 
-### Brew-less install
+### [Basher](https://github.com/basherpm/basher)
 
-If you can't or don't want to install using `homebrew`, you can use the provided `install.sh` and
-`uninstall.sh` scripts to add or remove the local bin path to your global $PATH:
+You can also use [basher](https://github.com/basherpm/basher) to install hnvm:
+
+```sh
+basher install UrbanCompass/hnvm
+```
+
+This will install both `hnvm` and `jq`.
+
+### Manual install script
+
+If you can't or don't want to install using `homebrew` or `basher`, you can use the provided
+`install.sh` and `uninstall.sh` scripts to add or remove the local bin path to your global $PATH:
 
 ```sh
 source install.sh
