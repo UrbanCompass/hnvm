@@ -29,6 +29,8 @@ brew install hnvm --with-pnpm
 brew install hnvm --with-yarn
 ```
 
+### Brew-less install
+
 If you can't or don't want to install using `homebrew`, you can use the provided `install.sh` and
 `uninstall.sh` scripts to add or remove the local bin path to your global $PATH:
 
@@ -39,6 +41,9 @@ node -v # Uses hnvm node script to get the node version
 source uninstall.sh
 node -v # No longer uses hnvm node script
 ```
+
+Note that `hnvm` depends on [`jq`](https://stedolan.github.io/jq/) being available in your global
+`$PATH`, and if you don't use `brew` you'll have to make sure that `jq` is installed on your own.
 
 ## Usage
 
