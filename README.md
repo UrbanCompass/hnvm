@@ -29,6 +29,17 @@ brew install hnvm --with-pnpm
 brew install hnvm --with-yarn
 ```
 
+If you can't or don't want to install using `homebrew`, you can use the provided `install.sh` and
+`uninstall.sh` scripts to add or remove the local bin path to your global $PATH:
+
+```sh
+source install.sh
+node -v # Uses hnvm node script to get the node version
+
+source uninstall.sh
+node -v # No longer uses hnvm node script
+```
+
 ## Usage
 
 HNVM reads the version of `node`/`pnpm`/`yarn` set in your `package.json` file' `"engines"` field. If
