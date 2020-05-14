@@ -26,7 +26,7 @@ IFS=';' read -ra dirs_array <<< "$rc_dirs"
 for i in "${dirs_array[@]}"; do
   rc_file="$i/.hnvmrc"
 
-  if [[ $i == '.git' && ! -z "$(which git)" ]]; then
+  if [[ $i == '.git' && ! -z "$(type -p git)" ]]; then
     git_root="$(if [ "`git rev-parse --show-cdup 2> /dev/null`" != "" ]; then cd `git rev-parse --show-cdup`; pwd; fi;)"
 
     if [[ ! -z "$git_root" && -f "$git_root/.hnvmrc" && ! -z "$(cat $git_root/.hnvmrc)" ]]; then
@@ -46,33 +46,35 @@ fi
 
 # Try version from package.json engines field
 pkg_json="$PWD/package.json"
+pkg_json_contents="$(cat $pkg_json)"
+
 if [[ -f "$pkg_json" ]]; then
   if [[ -z "$node_ver" ]]; then
-    node_ver="$(cat $pkg_json | jq -r '.hnvm.node')"
+    node_ver="$(echo $pkg_json_contents | jq -r '.hnvm.node')"
 
     if [[ "$node_ver" == "null" ]]; then
-      node_ver="$(cat $pkg_json | jq -r '.engines.hnvm')"
+      node_ver="$(echo $pkg_json_contents | jq -r '.engines.hnvm')"
     fi
 
     if [[ "$node_ver" == "null" ]]; then
-      node_ver="$(cat $pkg_json | jq -r '.engines.node')"
+      node_ver="$(echo $pkg_json_contents | jq -r '.engines.node')"
     fi
   fi
 
 
   if [[ -z "$pnpm_ver" ]]; then
-    pnpm_ver="$(cat $pkg_json | jq -r '.hnvm.pnpm')"
+    pnpm_ver="$(echo $pkg_json_contents | jq -r '.hnvm.pnpm')"
 
     if [[ "$pnpm_ver" == "null" ]]; then
-      pnpm_ver="$(cat $pkg_json | jq -r '.engines.pnpm')"
+      pnpm_ver="$(echo $pkg_json_contents | jq -r '.engines.pnpm')"
     fi
   fi
 
   if [[ -z "$yarn_ver" ]]; then
-    yarn_ver="$(cat $pkg_json | jq -r '.hnvm.yarn')"
+    yarn_ver="$(echo $pkg_json_contents | jq -r '.hnvm.yarn')"
 
     if [[ "$yarn_ver" == "null" ]]; then
-      yarn_ver="$(cat $pkg_json | jq -r '.engines.yarn')"
+      yarn_ver="$(echo $pkg_json_contents | jq -r '.engines.yarn')"
     fi
   fi
 fi
