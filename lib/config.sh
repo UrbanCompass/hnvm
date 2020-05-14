@@ -46,9 +46,10 @@ fi
 
 # Try version from package.json engines field
 pkg_json="$PWD/package.json"
-pkg_json_contents="$(cat $pkg_json)"
 
 if [[ -f "$pkg_json" ]]; then
+  pkg_json_contents="$(cat $pkg_json)"
+
   if [[ -z "$node_ver" ]]; then
     node_ver="$(echo $pkg_json_contents | jq -r '.hnvm.node')"
 
