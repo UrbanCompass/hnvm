@@ -124,7 +124,7 @@ function resolve_ver() {
     mkdir -p "$(dirname $cache_file)"
 
     # Cache result
-    if [ -f $cache_file ] && [ "$(( $(date +"%s") - $HNVM_RANGE_CACHE ))" -le "$(date -r $cache_file +"%s")" ]; then
+    if [ -f $cache_file ] && [ "$(( $(date +"%s") - ${HNVM_RANGE_CACHE:=0} ))" -le "$(date -r $cache_file +"%s")" ]; then
       ver="$(cat $cache_file)"
     else
       echo -e $'\e[33mWarning\e[0m: Resolving '$name' version range "'"$ver"'" is slower than providing an exact version.' > $COMMAND_OUTPUT
