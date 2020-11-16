@@ -48,7 +48,7 @@ fi
 pkg_json="$PWD/package.json"
 
 if [[ -f "$pkg_json" ]]; then
-  pkg_json_contents="$(cat $pkg_json)"
+  pkg_json_contents="$(cat "$pkg_json")"
 
   if [[ -z "$node_ver" ]]; then
     node_ver="$(echo $pkg_json_contents | jq -r '.hnvm.node')"
