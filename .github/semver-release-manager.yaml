@@ -1,0 +1,7 @@
+version: '2.0'
+release:
+  github-release:
+    default-level: none
+
+checks:
+  - semver-title

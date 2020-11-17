@@ -1,0 +1,34 @@
+version: 2.1
+orbs:
+  artifactory: jfrog/artifactory-orb@1.0.1
+  shellcheck: circleci/shellcheck@2.0.0
+workflows:
+  publish:
+    jobs:
+      - publish:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+/
+jobs:
+  publish:
+    docker:
+      - image: cimg/base:2020.01
+    working_directory: '~'
+    steps:
+      - checkout:
+          path: hnvm
+      - run: tar -zcvf hnvm.tar.gz --exclude '.git/*' hnvm/
+      - artifactory/install
+      - artifactory/configure:
+          artifactory-key: ARTIFACTORY_APIKEY
+          artifactory-url: ARTIFACTORY_URL
+          artifactory-user: ARTIFACTORY_USER
+      - artifactory/upload:
+          source: hnvm.tar.gz
+          target: generic-local/hnvm/${CIRCLE_TAG}/hnvm.tar.gz
+      - run:
+          when: on_success
+          command: |
+            echo "SHA-256: $(shasum --algorithm 256 hnvm.tar.gz)"
