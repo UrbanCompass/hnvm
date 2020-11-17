@@ -15,13 +15,13 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 export COMMAND_OUTPUT=/dev/stdout
 
 # Read env vars set in profile or at runtime
-export node_ver="$HNVM_NODE"
-export pnpm_ver="$HNVM_PNPM"
-export yarn_ver="$HNVM_YARN"
+export node_ver="${HNVM_NODE}"
+export pnpm_ver="${HNVM_PNPM}"
+export yarn_ver="${HNVM_YARN}"
 
 # Read and export rcfile variables from configured directories
 exports=''
-rc_dirs="$PWD;.git;$HOME;$script_dir/.."
+rc_dirs="${PWD};.git;${HOME};${script_dir}/.."
 IFS=';' read -ra dirs_array <<< "$rc_dirs"
 for i in "${dirs_array[@]}"; do
   rc_file="$i/.hnvmrc"
@@ -36,7 +36,8 @@ for i in "${dirs_array[@]}"; do
 
   if [[ -f "${rc_file}" && "${HNVM_NOFALLBACK}" != "true" ]]; then
     exports="$(cat "${rc_file}") ${exports}"
-    export "$(echo "${exports}" | grep -e -v '^#'| sed 's#~#'"${HOME}"'#g' | xargs)"
+    # shellcheck disable=SC2046
+    export $(echo "${exports}" | grep -E -v '^#'| sed 's#~#'"${HOME}"'#g' | xargs)
   fi
 done
 
@@ -61,7 +62,6 @@ if [[ -f "${pkg_json}" ]]; then
       node_ver="$(echo "${pkg_json_contents}" | jq -r '.engines.node')"
     fi
   fi
-
 
   if [[ -z "${pnpm_ver}" ]]; then
     pnpm_ver="$(echo "${pkg_json_contents}" | jq -r '.hnvm.pnpm')"
@@ -124,7 +124,7 @@ function resolve_ver() {
     mkdir -p "$(dirname "${cache_file}")"
 
     # Cache result
-    if [ -f "${cache_file}" ] && [ "$(( $(date +"%s") - "${HNVM_RANGE_CACHE}" ))" -le "$(date -r "${cache_file}" +"%s")" ]; then
+    if [ -f "${cache_file}" ] && [ "$(( $(date +"%s") - HNVM_RANGE_CACHE ))" -le "$(date -r "${cache_file}" +"%s")" ]; then
       ver="$(cat "${cache_file}")"
     else
       echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' version range "'"${ver}"'" is slower than providing an exact version.' > ${COMMAND_OUTPUT}
