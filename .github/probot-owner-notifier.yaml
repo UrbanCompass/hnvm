@@ -1,7 +1,13 @@
 slack:
-  FE Infra:
+  Builder Tools:
     channels:
       - builder-tools-reviews
     notify:
       - builder-tools
+    requireLabel: false
+  FE Infra:
+    channels:
+      - fe-infra-reviews
+    notify:
+      - fe-infra
     requireLabel: false
