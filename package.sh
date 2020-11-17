@@ -1,1 +1,1 @@
-DEPS=stedolan/jq
+export DEPS=stedolan/jq
