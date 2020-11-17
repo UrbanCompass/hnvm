@@ -15,9 +15,9 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 export COMMAND_OUTPUT=/dev/stdout
 
 # Read env vars set in profile or at runtime
-node_ver="$HNVM_NODE"
-pnpm_ver="$HNVM_PNPM"
-yarn_ver="$HNVM_YARN"
+export node_ver="$HNVM_NODE"
+export pnpm_ver="$HNVM_PNPM"
+export yarn_ver="$HNVM_YARN"
 
 # Read and export rcfile variables from configured directories
 exports=''

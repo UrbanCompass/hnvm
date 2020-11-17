@@ -27,14 +27,17 @@ source "${script_dir}/colors.sh"
 # shellcheck source=/dev/null
 source "${script_dir}/config.sh"
 
-node_path="${HNVM_PATH}/node/${node_ver}"
-node_bin="${node_path}/bin/node"
+export node_path="${HNVM_PATH}/node/${node_ver}"
+export node_bin="${node_path}/bin/node"
+export npm_bin="${node_path}/bin/npm"
+export npx_bin="${node_path}/bin/npx"
 
-pnpm_path="${HNVM_PATH}/pnpm/${pnpm_ver}"
-pnpm_bin="${pnpm_path}/bin/pnpm.js"
+export pnpm_path="${HNVM_PATH}/pnpm/${pnpm_ver}"
+export pnpm_bin="${pnpm_path}/bin/pnpm.js"
+export pnpx_bin="${pnpm_path}/bin/pnpx.js"
 
-yarn_path="${HNVM_PATH}/yarn/${yarn_ver}"
-yarn_bin="${yarn_path}/bin/yarn.js"
+export yarn_path="${HNVM_PATH}/yarn/${yarn_ver}"
+export yarn_bin="${yarn_path}/bin/yarn.js"
 
 function download_node() {
   platform=
