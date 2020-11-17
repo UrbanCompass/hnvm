@@ -1,9 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
 echo
 green "Thanking your node_modules for their service..."
 echo
 rm -rf node_modules
 
-exec $1 $2 install
+"${1}" "${2}" install
 
 expressions=(
   "Visible mess helps distract us from the true source of the disorder."
