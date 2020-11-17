@@ -1,0 +1,2 @@
+brew "shellcheck"
+brew "yq"
