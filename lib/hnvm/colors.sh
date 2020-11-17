@@ -18,3 +18,19 @@ function blue {
 function yellow {
   echo $'\e[1;33m'"$*"$'\e[0m'
 }
+
+function debug {
+  echo "$(blue DEBUG): $*" >&2
+}
+
+function warning {
+  echo "$(yellow WARNING): $*" >&2
+}
+
+function error {
+  echo "$(red ERROR): $*" >&2
+}
+
+function stderr {
+  echo "$*" >&2
+}
