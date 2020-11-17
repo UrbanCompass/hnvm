@@ -3,10 +3,6 @@ orbs:
   artifactory: jfrog/artifactory-orb@1.0.1
   shellcheck: circleci/shellcheck@2.0.0
 workflows:
-  shellcheck:
-    jobs:
-      - shellcheck/check:
-          dir: '.'
   publish:
     jobs:
       - publish:
