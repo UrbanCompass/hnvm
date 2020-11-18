@@ -33,6 +33,7 @@ jobs:
           source: hnvm.tar.gz
           target: generic-local/hnvm/${CIRCLE_TAG}/hnvm.tar.gz
       - run:
+          name: SHA-256
           when: on_success
           command: |
             echo "SHA-256: $(shasum --algorithm 256 hnvm.tar.gz)"
