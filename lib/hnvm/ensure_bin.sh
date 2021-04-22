@@ -120,4 +120,13 @@ if [[ "${0}" == *yarn ]] && [[ ! -f "${yarn_bin} " || "$("${node_bin}" "${yarn_b
   download_yarn
 fi
 
+# pnpm 6+ uses .cjs files for its bins
+if [ -f "${pnpm_path}/bin/pnpm.cjs" ]; then
+  pnpm_bin="${pnpm_path}/bin/pnpm.cjs"
+fi
+
+if [ -f "${pnpm_path}/bin/pnpx.cjs" ]; then
+  pnpx_bin="${pnpm_path}/bin/pnpx.cjs"
+fi
+
 blue "Using Hermetic NodeJS v${node_ver}" > "${COMMAND_OUTPUT}"
