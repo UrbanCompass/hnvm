@@ -108,6 +108,15 @@ if [[ -f "${node_path}/bin/pnpx" ]]; then
   rm "${node_path}/bin/pnpx" > "${COMMAND_OUTPUT}"
 fi
 
+# pnpm 6+ uses .cjs files for its bins
+if [ -f "${pnpm_path}/bin/pnpm.cjs" ]; then
+  pnpm_bin="${pnpm_path}/bin/pnpm.cjs"
+fi
+
+if [ -f "${pnpm_path}/bin/pnpx.cjs" ]; then
+  pnpx_bin="${pnpm_path}/bin/pnpx.cjs"
+fi
+
 if [[ ! -x "${node_bin}" ]]; then
   download_node
 fi
