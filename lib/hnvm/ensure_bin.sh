@@ -56,10 +56,10 @@ function download_node() {
   blue "Downloading node v${node_ver} to ${HNVM_PATH}/node" > "${COMMAND_OUTPUT}"
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl "${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz" --silent |
+    curl -n "${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz" --silent |
       tar xz -C "${node_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
   else
-    curl "${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz" |
+    curl -n "${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz" |
       tar xz -C "${node_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
   fi
 }
@@ -71,11 +71,11 @@ function download_pnpm() {
   blue "Downloading pnpm v${pnpm_ver} to ${HNVM_PATH}/pnpm" > "${COMMAND_OUTPUT}"
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js --silent |
+    curl -n -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js --silent |
       PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} > \
       "${COMMAND_OUTPUT}"
   else
-    curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js |
+    curl -n -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js |
       PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} > \
       "${COMMAND_OUTPUT}"
   fi
@@ -88,10 +88,10 @@ function download_yarn() {
   blue "Downloading yarn v${yarn_ver} to ${HNVM_PATH}/yarn" > "${COMMAND_OUTPUT}"
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --silent |
+    curl -n -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --silent |
       tar xz -C "${yarn_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
   else
-    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" |
+    curl -n -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" |
       tar xz -C "${yarn_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
   fi
 }
