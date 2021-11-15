@@ -10,14 +10,6 @@ while [ -h "${source}" ]; do # resolve $source until the file is no longer a sym
 done
 script_dir="$( cd -P "$( dirname "${source}" )" >/dev/null 2>&1 && pwd )"
 
-# Set these defaults here instead of the rc file so that HNVM_NOFALLBACK never blocks these defaults
-HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
-HNVM_RANGE_CACHE=${HNVM_RANGE_CACHE:-60}
-HNVM_QUIET=${HNVM_QUIET:-false}
-HNVM_NODE_DIST=${HNVM_NODE_DIST:-'https://nodejs.org/dist'}
-HNVM_PNPM_REGISTRY=${HNVM_PNPM_REGISTRY:-'https://registry.npmjs.org'}
-HNVM_YARN_DIST=${HNVM_YARN_DIST:-'https://yarnpkg.com/downloads'}
-
 node_ver=
 pnpm_ver=
 yarn_ver=

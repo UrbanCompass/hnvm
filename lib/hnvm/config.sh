@@ -14,10 +14,20 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
 export COMMAND_OUTPUT=/dev/stdout
 
+# Set these defaults here instead of the rc file so that HNVM_NOFALLBACK never blocks these defaults
+export HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
+export HNVM_RANGE_CACHE=${HNVM_RANGE_CACHE:-60}
+export HNVM_QUIET=${HNVM_QUIET:-false}
+export HNVM_NODE_DIST=${HNVM_NODE_DIST:-'https://nodejs.org/dist'}
+export HNVM_PNPM_REGISTRY=${HNVM_PNPM_REGISTRY:-'https://registry.npmjs.org'}
+export HNVM_YARN_DIST=${HNVM_YARN_DIST:-'https://yarnpkg.com/downloads'}
+
 # Read env vars set in profile or at runtime
 export node_ver="${HNVM_NODE}"
 export pnpm_ver="${HNVM_PNPM}"
 export yarn_ver="${HNVM_YARN}"
+
+available_node_bin=
 
 # Read and export rcfile variables from configured directories
 exports=''
@@ -109,6 +119,22 @@ if [[ -z "${node_ver}" ]]; then
   exit 1
 fi
 
+function is_invalid_version() {
+  [[ ! "$1" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]
+}
+
+# Finds _any_ locally available copy of node and sets `available_node_bin` to its path.
+function find_local_node() {
+  local available_node_ver=
+  available_node_ver="$(find "$HNVM_PATH/node/"* | head -n 1)"
+  if [ -z "$available_node_ver" ]; then
+    red "No local copy of node available. Please use hnvm at least once on a specific version before attempting semver ranges."
+    exit 1
+  fi
+
+  available_node_bin="${available_node_ver}/bin/node"
+}
+
 # Resolve an exact version when a semver range is given. Queries results from the npm registry.
 #
 # $1: Name of the package in the npm registry
@@ -118,22 +144,68 @@ fi
 function resolve_ver() {
   local name=${1}
   local ver=${2}
-  local cache_file="${script_dir}/../.tmp/${name}/${ver}"
+  local initial_ver=${2}
+  local ver_sanitized
+  local cache_file
+  ver_sanitized="${ver//[^a-z0-9_]/_}"
+  cache_file="${HNVM_PATH}/.tmp/${name}/${ver_sanitized}"
 
-  if [[ ! "$ver" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
+  # Only spend time resolving the version if it's not a fully resolved version number.
+  if is_invalid_version "$ver"; then
     mkdir -p "$(dirname "${cache_file}")"
 
-    # Cache result
+    # Check if the previous cache result exists and has been modified within the past HNVM_RANGE_CACHE seconds.
     if [ -f "${cache_file}" ] && [ "$(( $(date +"%s") - HNVM_RANGE_CACHE ))" -le "$(date -r "${cache_file}" +"%s")" ]; then
       ver="$(cat "${cache_file}")"
     else
-      echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' version range "'"${ver}"'" is slower than providing an exact version.' > ${COMMAND_OUTPUT}
+      echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' "'"${ver}"'" is slower than providing an exact version.' > ${COMMAND_OUTPUT}
 
-      ver="$(curl "http://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version')" > ${COMMAND_OUTPUT}
+      ver="$(curl "https://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version')" > ${COMMAND_OUTPUT}
+      if is_invalid_version "$ver"; then
+        find_local_node
+
+        # First try to find a local matching version.
+        available_versions="$(find "$HNVM_PATH/$name/"* -maxdepth 1 -type d | xargs basename | tr '\n' ':')"
+        matching_versions_input=$(cat <<EOF
+{
+  "desiredVersionRange": "${initial_ver}",
+  "availableVersionsColonDelimited": "${available_versions}"
+}
+EOF
+        )
+
+        set +e
+        ver=$(exec "${available_node_bin}" "${script_dir}/find-matching-version.js" <<< "${matching_versions_input}" 2>/dev/null)
+        set -e
+
+        echo "WTF: ${ver} ${matching_versions_input}"
+
+        # If we didn't have a local copy, fetch the list of versions in existence and use the latest in the range.
+        if is_invalid_version "$ver"; then
+          echo -e $'\e[33mWarning\e[0m: "'"${initial_ver}"'" is not satisfied by any local version and must be resolved asynchronously.' > ${COMMAND_OUTPUT}
+          npm_package_info="$(curl "https://registry.npmjs.org/${name}" --silent)" > /dev/null
+          matching_versions_input=$(cat <<EOF
+{
+  "desiredVersionRange": "${initial_ver}",
+  "npmPackageInfo": ${npm_package_info}
+}
+EOF
+          )
+
+          ver=$(exec "${available_node_bin}" "${script_dir}/find-matching-version.js" <<< "${matching_versions_input}")
+        fi
+      fi
+
+      if is_invalid_version "$ver"; then
+        red """Failed to resolve "${initial_version}" to a valid version, "${ver}" is not valid."""
+      fi
+
+      # Cache the resolved version for future runs.
       echo "${ver}" > "${cache_file}"
     fi
   fi
 
+  blue """Resolved $name "${initial_ver}" to ${ver}"""
   resolve_ver_result=${ver}
 }
 
