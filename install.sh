@@ -27,7 +27,7 @@ if not_in_path; then
   export PATH="${bin_path}:${PATH}"
 
   # shellcheck source=/dev/null
-  source "${script_dir}/lib/colors.sh"
+  source "${script_dir}/lib/hnvm/colors.sh"
   green "Added local hnvm to PATH:"
   echo "${PATH}"
 fi
