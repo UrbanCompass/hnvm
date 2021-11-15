@@ -3,7 +3,7 @@ const {createTestContext} = require('./utils.js')
 
 jest.setTimeout(60_000)
 
-describe.skip('node with a semver range', () => {
+describe('node with a semver range', () => {
   let context
 
   beforeAll(() => {

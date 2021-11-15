@@ -3,7 +3,7 @@ const {createTestContext} = require('./utils.js')
 
 jest.setTimeout(60_000)
 
-describe.skip('node with a tag (latest)', () => {
+describe('node with a tag (latest)', () => {
   const VERSION = 'latest'
   let context
 
