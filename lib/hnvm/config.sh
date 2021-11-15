@@ -198,6 +198,7 @@ EOF
 
       if is_invalid_version "$ver"; then
         red """Failed to resolve "${initial_version}" to a valid version, "${ver}" is not valid."""
+        exit 1
       fi
 
       # Cache the resolved version for future runs.
