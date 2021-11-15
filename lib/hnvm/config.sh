@@ -12,7 +12,7 @@ while [ -h "$source" ]; do # resolve $source until the file is no longer a symli
 done
 script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
-export COMMAND_OUTPUT=/dev/stdout
+export COMMAND_OUTPUT=${HNVM_OUTPUT_DESTINATION:-/dev/stdout}
 
 # Read env vars set in profile or at runtime
 export node_ver="${HNVM_NODE}"
@@ -132,9 +132,9 @@ function resolve_ver() {
     if [ -f "${cache_file}" ] && [ "$(( $(date +"%s") - HNVM_RANGE_CACHE ))" -le "$(date -r "${cache_file}" +"%s")" ]; then
       ver="$(cat "${cache_file}")"
     else
-      echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' version range "'"${ver}"'" is slower than providing an exact version.' > ${COMMAND_OUTPUT}
+      echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' version range "'"${ver}"'" is slower than providing an exact version.' >> "${COMMAND_OUTPUT}"
 
-      ver="$(curl "http://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version')" > ${COMMAND_OUTPUT}
+      ver="$(curl "http://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version')" >> "${COMMAND_OUTPUT}"
       echo "${ver}" > "${cache_file}"
     fi
   fi
