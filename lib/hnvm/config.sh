@@ -51,11 +51,6 @@ pkg_json="${PWD}/package.json"
 if [[ -f "${pkg_json}" ]]; then
   pkg_json_contents="$(cat "${pkg_json}")"
 
-  echo $pkg_json_contents | jq || {
-    red "An error occurred while parsing package.json"
-    exit 1
-  }
-
   if [[ -z "${node_ver}" ]]; then
     node_ver="$(echo "${pkg_json_contents}" | jq -r '.hnvm.node')"
 
