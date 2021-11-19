@@ -165,7 +165,7 @@ output, set the `HNVM_QUIET` environment variable to `true` to have this output 
 Location of the NodeJS distribution files. If you provide a custom destination, you should ensure
 that the repository layout mirrors that of nodejs.org:
 ```
-/node-v${node_ver}-${platform}-x64.tar.gz
+/node-v${node_ver}-${platform}-${cpu_arch}.tar.gz
 ```
 
 ### `HNVM_PNPM_REGISTRY` (Defaults to `https://registry.npmjs.org`)
