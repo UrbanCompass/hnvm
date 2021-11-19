@@ -50,7 +50,7 @@ function download_node() {
     exit 1
   fi
 
-  node_major=$(echo $node_ver | grep -Eo "^\d+")
+  node_major=$(echo "$node_ver" | grep -Eo "^\d+")
   cpu_arch="x64"
   if [[ "$node_major" -ge 16 ]]; then
     # Apple Silicon builds exist in Node 16+
