@@ -50,16 +50,25 @@ function download_node() {
     exit 1
   fi
 
+  cpu_arch="x64"
+  if [[ $(uname -m) == "arm64" ]]; then
+    node_major=$(echo "$node_ver" | grep -Eo "^\d+")
+    if [[ "$node_major" -ge 16 ]]; then
+      cpu_arch="arm64"
+    fi
+  fi
+
   rm -rf "${node_path}"
   mkdir -p "${node_path}"
 
   blue "Downloading node v${node_ver} to ${HNVM_PATH}/node" > "${COMMAND_OUTPUT}"
 
+  node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}.tar.gz"
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl "${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz" --silent |
+    curl $node_download_url --silent |
       tar xz -C "${node_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
   else
-    curl "${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-x64.tar.gz" |
+    curl $node_download_url |
       tar xz -C "${node_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
   fi
 }
