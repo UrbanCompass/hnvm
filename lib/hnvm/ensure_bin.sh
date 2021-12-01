@@ -65,10 +65,10 @@ function download_node() {
 
   node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}.tar.gz"
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl $node_download_url --silent |
+    curl "$node_download_url" --silent |
       tar xz -C "${node_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
   else
-    curl $node_download_url |
+    curl "$node_download_url" |
       tar xz -C "${node_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
   fi
 }

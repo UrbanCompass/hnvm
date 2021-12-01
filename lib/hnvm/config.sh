@@ -51,7 +51,7 @@ pkg_json="${PWD}/package.json"
 if [[ -f "${pkg_json}" ]]; then
   pkg_json_contents="$(cat "${pkg_json}")"
 
-   echo $pkg_json_contents | jq '.' > /dev/null || {
+   echo "$pkg_json_contents" | jq '.' > /dev/null || {
     red "An error occurred while parsing package.json"
     exit 1
   }
