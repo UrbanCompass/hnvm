@@ -29,7 +29,7 @@ if is_in_path; then
   PATH=${PATH#:}; PATH=${PATH%:}
 
   # shellcheck source=/dev/null
-  source "${script_dir}/lib/colors.sh"
+  source "${script_dir}/lib/hnvm/colors.sh"
   green "Removed local hnvm from PATH:"
   echo "${PATH}"
 fi
