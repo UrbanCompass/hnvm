@@ -11,7 +11,7 @@ consistent packages, and upgrades required by one package don't affect another.
 
 ## Installation
 
-### [Homebrew](https://brew.sh)
+### [Homebrew](https://brew.sh) (Compass Employees Only)
 
 HNVM is distributed via [Homebrew](https://brew.sh) inside the
 [`UrbanCompass/versions` tap](https://github.com/UrbanCompass/homebrew-versions):
