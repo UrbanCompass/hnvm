@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Set scripts-prepend-node-path=true to keep the version of node used to run pnpm on the PATH
+export npm_config_scripts_prepend_node_path=true
+
 set -e
 
 node_bin=
