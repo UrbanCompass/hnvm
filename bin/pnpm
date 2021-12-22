@@ -3,6 +3,9 @@
 # Set scripts-prepend-node-path=true to keep the version of node used to run pnpm on the PATH
 export npm_config_scripts_prepend_node_path=true
 
+# Set enable-pre-post-scripts=true to run pre/post scripts automatically in pnpm 6.0.0+
+export npm_config_enable_pre_post_scripts=true
+
 set -e
 
 node_bin=
