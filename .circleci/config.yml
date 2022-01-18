@@ -3,8 +3,9 @@ orbs:
   artifactory: jfrog/artifactory-orb@1.0.1
   shellcheck: circleci/shellcheck@2.0.0
 workflows:
-  shellcheck:
+  ci:
     jobs:
+      - integration
       - shellcheck/check:
           dir: '.'
   publish:
@@ -16,6 +17,17 @@ workflows:
             tags:
               only: /^v\d+\.\d+\.\d+/
 jobs:
+  integration:
+    docker:
+      - image: circleci/node:14.18-buster
+    steps:
+      - checkout
+      - run:
+          command: npm install
+          working_directory: ./test
+      - run:
+          command: npm test
+          working_directory: ./test
   publish:
     docker:
       - image: cimg/base:2020.01

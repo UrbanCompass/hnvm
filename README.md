@@ -208,3 +208,9 @@ node v12.0.0.
 Because `nvm` doesn't support [`fish`](https://fish.sh) 😅. This project also focuses on individual
 projects or packages declaring versions of node to use, as opposed to switching globally between
 different versions. It results in a simpler setup with far less code.
+
+### Integration Tests
+
+NOTE: The tests hit live npm registry servers and go through the process of downloading multiple copies of node. Do not run in bandwidth-constrained environments!
+
+Tests for HNVM are written with [jest](https://jestjs.io/) and require node 14.4.0 or higher (protip: use hnvm to test hnvm 😉). To run the tests, `cd test/ && npm install && npm test`

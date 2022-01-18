@@ -1,0 +1,19 @@
+{
+  "name": "hnvm-test",
+  "private": true,
+  "version": "0.0.0-development",
+  "description": "The test suite for hermetic node version manager.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "engines": {
+    "hnvm": "14.18.0"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "devDependencies": {
+    "jest": "^27.3.1"
+  }
+}

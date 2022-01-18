@@ -10,14 +10,6 @@ while [ -h "${source}" ]; do # resolve $source until the file is no longer a sym
 done
 script_dir="$( cd -P "$( dirname "${source}" )" >/dev/null 2>&1 && pwd )"
 
-# Set these defaults here instead of the rc file so that HNVM_NOFALLBACK never blocks these defaults
-HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
-HNVM_RANGE_CACHE=${HNVM_RANGE_CACHE:-60}
-HNVM_QUIET=${HNVM_QUIET:-false}
-HNVM_NODE_DIST=${HNVM_NODE_DIST:-'https://nodejs.org/dist'}
-HNVM_PNPM_REGISTRY=${HNVM_PNPM_REGISTRY:-'https://registry.npmjs.org'}
-HNVM_YARN_DIST=${HNVM_YARN_DIST:-'https://yarnpkg.com/downloads'}
-
 node_ver=
 pnpm_ver=
 yarn_ver=
@@ -61,15 +53,15 @@ function download_node() {
   rm -rf "${node_path}"
   mkdir -p "${node_path}"
 
-  blue "Downloading node v${node_ver} to ${HNVM_PATH}/node" > "${COMMAND_OUTPUT}"
+  blue "Downloading node v${node_ver} to ${HNVM_PATH}/node" >> "${COMMAND_OUTPUT}"
 
   node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}.tar.gz"
   if [[ "${HNVM_QUIET}" == "true" ]]; then
     curl "$node_download_url" --silent |
-      tar xz -C "${node_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
+      tar xz -C "${node_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
   else
     curl "$node_download_url" |
-      tar xz -C "${node_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
+      tar xz -C "${node_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
   fi
 }
 
@@ -77,15 +69,15 @@ function download_pnpm() {
   rm -rf "${pnpm_path}"
   mkdir -p "${pnpm_path}"
 
-  blue "Downloading pnpm v${pnpm_ver} to ${HNVM_PATH}/pnpm" > "${COMMAND_OUTPUT}"
+  blue "Downloading pnpm v${pnpm_ver} to ${HNVM_PATH}/pnpm" >> "${COMMAND_OUTPUT}"
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
     curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js --silent |
-      PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} > \
+      PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
       "${COMMAND_OUTPUT}"
   else
     curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js |
-      PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} > \
+      PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
       "${COMMAND_OUTPUT}"
   fi
 }
@@ -94,27 +86,27 @@ function download_yarn() {
   rm -rf "${yarn_path}"
   mkdir -p "${yarn_path}"
 
-  blue "Downloading yarn v${yarn_ver} to ${HNVM_PATH}/yarn" > "${COMMAND_OUTPUT}"
+  blue "Downloading yarn v${yarn_ver} to ${HNVM_PATH}/yarn" >> "${COMMAND_OUTPUT}"
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
     curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --silent |
-      tar xz -C "${yarn_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
+      tar xz -C "${yarn_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
   else
     curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" |
-      tar xz -C "${yarn_path}" --strip-components=1 > "${COMMAND_OUTPUT}"
+      tar xz -C "${yarn_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
   fi
 }
 
 # Something's globally installing pnpm and pnpx, need to remove otherwise npm scripts won't use
 # hnvm and they'll use this globally installed one instead
 if [[ -f "${node_path}/bin/pnpm" ]]; then
-  yellow "Found conflicting global install of pnpm, removing..." > "${COMMAND_OUTPUT}"
-  rm "${node_path}/bin/pnpm" > "${COMMAND_OUTPUT}"
+  yellow "Found conflicting global install of pnpm, removing..." >> "${COMMAND_OUTPUT}"
+  rm "${node_path}/bin/pnpm" >> "${COMMAND_OUTPUT}"
 fi
 
 if [[ -f "${node_path}/bin/pnpx" ]]; then
-  yellow "Found conflicting global install of pnpx, removing..." > "${COMMAND_OUTPUT}"
-  rm "${node_path}/bin/pnpx" > "${COMMAND_OUTPUT}"
+  yellow "Found conflicting global install of pnpx, removing..." >> "${COMMAND_OUTPUT}"
+  rm "${node_path}/bin/pnpx" >> "${COMMAND_OUTPUT}"
 fi
 
 # pnpm 6+ uses .cjs files for its bins
@@ -147,4 +139,4 @@ if [ -f "${pnpm_path}/bin/pnpx.cjs" ]; then
   pnpx_bin="${pnpm_path}/bin/pnpx.cjs"
 fi
 
-blue "Using Hermetic NodeJS v${node_ver}" > "${COMMAND_OUTPUT}"
+blue "Using Hermetic NodeJS v${node_ver}" >> "${COMMAND_OUTPUT}"
