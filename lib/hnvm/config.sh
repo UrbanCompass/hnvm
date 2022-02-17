@@ -110,17 +110,17 @@ fi
 
 # No fallback version(s) could be determined, error out for those missing
 if [[ -z "${pnpm_ver}" && ("${0}" == *pnpm || "${0}" == *pnpx) ]]; then
-  red "No HNVM_PNPM version set. Please set a pnpm version."
+  error "No HNVM_PNPM version set. Please set a pnpm version."
   exit 1
 fi
 
 if [[ -z "${yarn_ver}" && "${0}" == *yarn ]]; then
-  red "No HNVM_YARN version set. Please set a yarn version."
+  error "No HNVM_YARN version set. Please set a yarn version."
   exit 1
 fi
 
 if [[ -z "${node_ver}" ]]; then
-  red "No HNVM_NODE version set. Please set a Node version."
+  error "No HNVM_NODE version set. Please set a Node version."
   exit 1
 fi
 
@@ -208,7 +208,7 @@ EOF
     fi
   fi
 
-  blue """Resolved $name ""${initial_ver}"" to ${ver}"""
+  blue """Resolved $name ""${initial_ver}"" to ${ver}""" >> "${COMMAND_OUTPUT}"
   resolve_ver_result=${ver}
 }
 
