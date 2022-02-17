@@ -38,7 +38,7 @@ function download_node() {
   elif [[ "${OSTYPE}" == "darwin"* ]]; then
     platform="darwin"
   else
-    red "OS Platform not supported"
+    error "OS Platform not supported"
     exit 1
   fi
 
@@ -100,12 +100,12 @@ function download_yarn() {
 # Something's globally installing pnpm and pnpx, need to remove otherwise npm scripts won't use
 # hnvm and they'll use this globally installed one instead
 if [[ -f "${node_path}/bin/pnpm" ]]; then
-  yellow "Found conflicting global install of pnpm, removing..." >> "${COMMAND_OUTPUT}"
+  warning "Found conflicting global install of pnpm, removing..." >> "${COMMAND_OUTPUT}"
   rm "${node_path}/bin/pnpm" >> "${COMMAND_OUTPUT}"
 fi
 
 if [[ -f "${node_path}/bin/pnpx" ]]; then
-  yellow "Found conflicting global install of pnpx, removing..." >> "${COMMAND_OUTPUT}"
+  warning "Found conflicting global install of pnpx, removing..." >> "${COMMAND_OUTPUT}"
   rm "${node_path}/bin/pnpx" >> "${COMMAND_OUTPUT}"
 fi
 
