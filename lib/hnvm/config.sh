@@ -12,7 +12,7 @@ while [ -h "$source" ]; do # resolve $source until the file is no longer a symli
 done
 script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
-export COMMAND_OUTPUT=${HNVM_OUTPUT_DESTINATION:-/dev/stdout}
+export COMMAND_OUTPUT=${HNVM_OUTPUT_DESTINATION:-/dev/fd/1}
 
 # Set these defaults here instead of the rc file so that HNVM_NOFALLBACK never blocks these defaults
 export HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
