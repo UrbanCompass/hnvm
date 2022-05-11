@@ -46,7 +46,7 @@ describe('node with a semver range', () => {
   })
 
   it('should update the requirement to a non-matching semver range', () => {
-    context.createPackageJson({engines: {node: '>=16'}})
+    context.createPackageJson({engines: {node: '>=16.0.0'}})
   })
 
   it('should run without an error exit code', () => {
@@ -58,5 +58,19 @@ describe('node with a semver range', () => {
     const files = fs.readdirSync(context.hnvmDir + '/node')
     expect(files).toHaveLength(2)
     expect(files).toContain('14.18.0')
+  })
+
+  it('should handle || ranges', () => {
+    context.createPackageJson({engines: {node: '13.0.0 || >=16'}})
+  })
+
+  it('should run without an error exit code', () => {
+    const result = context.execFileSync(context.binaries.node, ['-p', '"Hello, World!"'])
+    expect(result).toContain('Hello, World!')
+  })
+
+  it('should not have downloaded a new version', () => {
+    const files = fs.readdirSync(context.hnvmDir + '/node')
+    expect(files).toHaveLength(2)
   })
 })
