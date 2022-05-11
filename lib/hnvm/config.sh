@@ -125,7 +125,7 @@ if [[ -z "${node_ver}" ]]; then
 fi
 
 function is_invalid_version() {
-  [[ ! "$1" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]
+  [[ ! "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 }
 
 # Finds _any_ locally available copy of node and sets `available_node_bin` to its path.
@@ -165,7 +165,8 @@ function resolve_ver() {
     else
       echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' "'"${ver}"'" is slower than providing an exact version.'  >> "${COMMAND_OUTPUT}"
 
-      ver="$(curl "https://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version')"  >> "${COMMAND_OUTPUT}"
+      # Try to resolve a version tag directly from the registry first, but gracefully fail if it's malformed.
+      ver="$(curl "https://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version' || echo 'INVALID')"  >> "${COMMAND_OUTPUT}"
       if is_invalid_version "$ver"; then
         find_local_node
 
