@@ -49,6 +49,8 @@ jobs:
           filename: ./hnvm/${CIRCLE_TAG}/hnvm.tar.gz
           format: raw
           repository: generic-local
+          # attributes is required for the orb, even though we don't use it here
+          attributes: ""
       - run:
           name: SHA-256
           when: on_success
