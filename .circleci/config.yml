@@ -30,7 +30,9 @@ jobs:
           command: npm test
           working_directory: ./test
   publish:
-    executor: nexus/nexus-platform-cli
+    # The nexus orb is implemented in groovy, so Java is a hard requirement before using it
+    docker:
+      - image: cimg/openjdk:18.0.1
     working_directory: '~'
     steps:
       - checkout:
