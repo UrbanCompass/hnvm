@@ -1,7 +1,5 @@
 version: 2.1
 orbs:
-  # Nexus orb: https://circleci.com/developer/orbs/orb/sonatype/nexus-platform-orb
-  nexus: sonatype/nexus-platform-orb@1.0.28
   shellcheck: circleci/shellcheck@2.0.0
 workflows:
   ci:
@@ -30,30 +28,22 @@ jobs:
           command: npm test
           working_directory: ./test
   publish:
-    # The nexus orb is implemented in groovy, so Java is a hard requirement before using it
-    # Orb@1.0.28 also specifically relies on Java8, so upgrading the image is brittle.
     docker:
-      - image: cimg/openjdk:8.0
+      - image: cimg/base:2020.01
     working_directory: '~'
     steps:
       - checkout:
           path: hnvm
-      - run: tar -zcvf hnvm.tar.gz --exclude '.git/*' hnvm/
-      # The nexus orb doesn't support source/target mappings for file publishes, so this handles
-      # placing the tarball on a filepath that matches the path we want it to be hosted at
-      # in Nexus itself. This is so "filename" param for publish matches the desired path in Nexus.
-      - run: mkdir -p ./hnvm/${CIRCLE_TAG}
-      - run: cp ./hnvm.tar.gz ./hnvm/${CIRCLE_TAG}/hnvm.tar.gz
-      - nexus/install
-      - nexus/publish:
-          username: NEXUS_USERNAME
-          password: NEXUS_PASSWORD
-          serverurl: NEXUS_URL
-          filename: ./hnvm/${CIRCLE_TAG}/hnvm.tar.gz
-          format: raw
-          repository: generic-local
-          # attributes is required for the orb, even though we don't use it here
-          attributes: ""
+      - run:
+          name: Create hnvm gzip artifact
+          command: |
+            tar -zcvf hnvm.tar.gz --exclude '.git/*' hnvm/
+      - run:
+          name: Upload hnvm gzip to Nexus
+          command: |
+            curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --http1.1 \
+            --upload-file ~/hnvm.tar.gz \
+            ${NEXUS_URL}/repository/generic-local/hnvm/${CIRCLE_TAG}/hnvm.tar.gz
       - run:
           name: SHA-256
           when: on_success
