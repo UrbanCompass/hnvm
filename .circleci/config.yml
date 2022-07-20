@@ -30,8 +30,7 @@ jobs:
           command: npm test
           working_directory: ./test
   publish:
-    docker:
-      - image: cimg/base:2020.01
+    executor: nexus/nexus-platform-cli
     working_directory: '~'
     steps:
       - checkout:
@@ -42,7 +41,6 @@ jobs:
       # in Nexus itself. This is so "filename" param for publish matches the desired path in Nexus.
       - run: mkdir -p ./hnvm/${CIRCLE_TAG}
       - run: cp ./hnvm.tar.gz ./hnvm/${CIRCLE_TAG}/hnvm.tar.gz
-      - nexus/install
       - nexus/publish:
           username: NEXUS_USERNAME
           password: NEXUS_PASSWORD
