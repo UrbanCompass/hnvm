@@ -30,8 +30,7 @@ jobs:
           command: npm test
           working_directory: ./test
   publish:
-    docker:
-      - image: cimg/base:2020.01
+    executor: nexus/nexus-platform-cli
     working_directory: '~'
     steps:
       - checkout:
