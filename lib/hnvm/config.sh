@@ -45,7 +45,10 @@ for i in "${dirs_array[@]}"; do
   fi
 
   if [[ -f "${rc_file}" && "${HNVM_NOFALLBACK}" != "true" ]]; then
-    exports="$(cat "${rc_file}") ${exports}"
+    # The rc file and previous exports should ALWAYS be separated by a newline
+    # otherwise, the grep to weed out comment lines will fail if an hnvmrc starts with an L1 comment
+    newline=$'\n'
+    exports="$(cat "${rc_file}")${newline}${exports}"
     # shellcheck disable=SC2046
     export $(echo "${exports}" | grep -E -v '^#'| sed 's#~#'"${HOME}"'#g' | xargs)
   fi
