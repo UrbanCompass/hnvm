@@ -22,18 +22,14 @@ COMMAND_OUTPUT=""
 # - /dev/null - only used as fallback, if none of the above exist
 if [[ -e "/dev/fd/1" ]]; then
   COMMAND_OUTPUT="/dev/fd/1"
-fi
-
-if [[ -e "/dev/stdout" ]]; then
+elif [[ -e "/dev/stdout" ]]; then
   COMMAND_OUTPUT="/dev/stdout"
-fi
-
-if [[ -e "$HNVM_OUTPUT_DESTINATION" ]]; then
+elif [[ -n "$HNVM_OUTPUT_DESTINATION" ]]; then
+  # If this is a non-zero string, we will use it as-is.
+  # >> redirect will create the file if it doesn't already exist
   COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
-fi
-
-# If COMMAND_OUTPUT is STILL empty, fall back to posix-standard /dev/null
-if [[ -z "$COMMAND_OUTPUT" ]]; then
+else
+  # If COMMAND_OUTPUT is STILL empty, fall back to posix-standard /dev/null
   echo "WARNING: Could not find a valid stdout redirect target!"
   echo "WARNING: Further HNVM output will be redirected to '/dev/null'"
   COMMAND_OUTPUT="/dev/null"
