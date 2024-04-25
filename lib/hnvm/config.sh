@@ -12,7 +12,34 @@ while [ -h "$source" ]; do # resolve $source until the file is no longer a symli
 done
 script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
-export COMMAND_OUTPUT=${HNVM_OUTPUT_DESTINATION:-/dev/stdout}
+COMMAND_OUTPUT=""
+
+# Try aggressively to find an environment-supported stdout descriptor
+# For command output shell redirection, hierarchy is (most to least priority)
+# - $HNVM_OUTPUT_DESTINATION - arbitrary path given as env var
+# - /dev/stdout - convenience symlink to fd 1 - not fully posix portable
+# - /dev/fd/1 - on macos, the character special device (c in `ls`) that is the stdout stream
+# - /dev/null - only used as fallback, if none of the above exist
+if [[ -e "/dev/fd/1" ]]; then
+  COMMAND_OUTPUT="/dev/fd/1"
+fi
+
+if [[ -e "/dev/stdout" ]]; then
+  COMMAND_OUTPUT="/dev/stdout"
+fi
+
+if [[ -e "$HNVM_OUTPUT_DESTINATION" ]]; then
+  COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
+fi
+
+# If COMMAND_OUTPUT is STILL empty, fall back to posix-standard /dev/null
+if [[ -z "$COMMAND_OUTPUT" ]]; then
+  echo "WARNING: Could not find a valid stdout redirect target!"
+  echo "WARNING: Further HNVM output will be redirected to '/dev/null'"
+  COMMAND_OUTPUT="/dev/null"
+fi
+
+export COMMAND_OUTPUT
 
 # Set these defaults here instead of the rc file so that HNVM_NOFALLBACK never blocks these defaults
 export HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
