@@ -20,14 +20,14 @@ COMMAND_OUTPUT=""
 # - /dev/stdout - convenience symlink to fd 1 - not fully posix portable
 # - /dev/fd/1 - on macos, the character special device (c in `ls`) that is the stdout stream
 # - /dev/null - only used as fallback, if none of the above exist
-if [[ -e "/dev/fd/1" ]]; then
-  COMMAND_OUTPUT="/dev/fd/1"
-elif [[ -e "/dev/stdout" ]]; then
-  COMMAND_OUTPUT="/dev/stdout"
-elif [[ -n "$HNVM_OUTPUT_DESTINATION" ]]; then
+if [[ -n "$HNVM_OUTPUT_DESTINATION" ]]; then
   # If this is a non-zero string, we will use it as-is.
   # >> redirect will create the file if it doesn't already exist
   COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
+elif [[ -e "/dev/stdout" ]]; then
+  COMMAND_OUTPUT="/dev/stdout"
+elif [[ -e "/dev/fd/1" ]]; then
+  COMMAND_OUTPUT="/dev/fd/1"
 else
   # If COMMAND_OUTPUT is STILL empty, fall back to posix-standard /dev/null
   echo "WARNING: Could not find a valid stdout redirect target!"
