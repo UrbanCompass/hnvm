@@ -14,23 +14,35 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
 COMMAND_OUTPUT=""
 
-# Try aggressively to find an environment-supported stdout descriptor
+# Try aggressively to find an environment-supported, redirectable, stdout fd descriptor
+#
+# In nodejs spawned subprocess (think npm pre/postinstall scripts), stdio can be
+# provided as sockets, which is not able to do simple '>>' bash redirection
+# https://nodejs.org/api/child_process.html#optionsstdio
+# "These are not actual Unix pipes and therefore the child process can not use them by their
+# descriptor files, e.g. /dev/fd/2 or /dev/stdout."
+#
 # For command output shell redirection, hierarchy is (most to least priority)
 # - $HNVM_OUTPUT_DESTINATION - arbitrary path given as env var
 # - /dev/stdout - convenience symlink to fd 1 - not fully posix portable
 # - /dev/fd/1 - on macos, the character special device (c in `ls`) that is the stdout stream
 # - /dev/null - only used as fallback, if none of the above exist
-if [[ -n "$HNVM_OUTPUT_DESTINATION" ]]; then
-  # If this is a non-zero string, we will use it as-is.
-  # >> redirect will create the file if it doesn't already exist
+if [[ -n "$HNVM_OUTPUT_DESTINATION" && ! -S "$HNVM_OUTPUT_DESTINATION" ]]; then
+  # If this is a non-zero string, and does not point to an existing socket, we will use it as-is.
+  # Unlike the fallbacks, don't check for existence - we support using a path that does not exist
+  # Reason is, '>>' redirect will create the file if it doesn't already exist
   COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
-elif [[ -e "/dev/stdout" ]]; then
+elif [[ -e "/dev/stdout" && -w "/dev/stdout" && ! -S "/dev/stdout" ]]; then
+  # Only use this when the fd target exists, is writable, and is NOT a socket
+  # 'echo "foo" >> $target' redirect will not work, if $target is a unix IPC socket
   COMMAND_OUTPUT="/dev/stdout"
-elif [[ -e "/dev/fd/1" ]]; then
+elif [[ -e "/dev/fd/1" && -w "/dev/fd/1" && ! -S "/dev/stdout" ]]; then
+  # Only use this when the fd target exists, is writable, and is NOT a socket
+  # 'echo "foo" >> $target' redirect will not work, if $target is a unix IPC socket
   COMMAND_OUTPUT="/dev/fd/1"
 else
-  # If COMMAND_OUTPUT is STILL empty, fall back to posix-standard /dev/null
-  echo "WARNING: Could not find a valid stdout redirect target!"
+  # If COMMAND_OUTPUT is still not assigned by here, fall back to posix-standard /dev/null
+  echo "WARNING: Could not find a writable, non-socket stdout redirect target!"
   echo "WARNING: Further HNVM output will be redirected to '/dev/null'"
   COMMAND_OUTPUT="/dev/null"
 fi
