@@ -64,7 +64,8 @@ function createTestContext() {
       fs.writeFileSync(path.join(cwdDir, 'package.json'), JSON.stringify(json))
     },
     cleanup() {
-      // close() will close the server bound to the socket file, and delete the socket file
+      // close() will close the server bound to the socket file,
+      // and terminate any previously made connections
       testStdoutServer.close()
       fs.rmSync(testDir, {recursive: true, force: true})
     },
