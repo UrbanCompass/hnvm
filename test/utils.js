@@ -73,9 +73,11 @@ function createTestContext() {
       const outputFile = path.join(testDir, 'stdout')
       fs.writeFileSync(outputFile, '')
 
+      // need to explicitly set PATH, otherwise it defaults to using "/usr/gnu/bin:/usr/local/bin:/bin:/usr/bin:."
+      // this default PATH may have issues finding `jq`, which will break the test when it runs source code
       const stdout = childProcess.execFileSync(file, args, {
         encoding: 'utf-8',
-        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: outputFile},
+        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: outputFile, PATH: process.env.PATH},
         cwd: cwdDir,
       })
 
@@ -84,13 +86,15 @@ function createTestContext() {
     execFileSyncWithSocketOutput(file, args) {
       // Provide a socket as HNVM_OUTPUT_DESTINATION
       // Used for tests that want to test behavior when the redirect target is a socket
-      const stdout = childProcess.execFileSync(file, args, {
+      // need to explicitly set PATH, otherwise it defaults to using "/usr/gnu/bin:/usr/local/bin:/bin:/usr/bin:."
+      // this default PATH may have issues finding `jq`, which will break the test when it runs source code
+      const hnvmProcess = childProcess.spawnSync(file, args, {
         encoding: 'utf-8',
-        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: testStdoutSocket},
+        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: testStdoutSocket, PATH: process.env.PATH},
         cwd: cwdDir,
-      })
+      });
 
-      return stdout
+      return hnvmProcess;
     },
   }
 }

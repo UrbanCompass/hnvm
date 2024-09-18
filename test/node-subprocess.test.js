@@ -16,15 +16,15 @@ describe('node with a fixed verison', () => {
   })
 
   it('should fallback to using "/dev/null" if HNVM_OUTPUT_DESTINATION is a socket', () => {
-    const result = context.execFileSyncWithSocketOutput(
+    const hnvmProcess = context.execFileSyncWithSocketOutput(
       context.binaries.node,
       ['-p', '"Hello, World!"']
     )
 
-    expect(result).toContain('Hello, World!')
-    expect(result).toContain(
+    expect(hnvmProcess.stdout).toContain('Hello, World!')
+    expect(hnvmProcess.stderr).toContain(
       "WARNING: Could not find a writable, non-socket stdout redirect target!"
     )
-    expect(result).toContain("WARNING: Further HNVM output will be redirected to '/dev/null'")
+    expect(hnvmProcess.stderr).toContain("WARNING: Further HNVM output will be redirected to '/dev/null'")
   })
 })
