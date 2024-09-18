@@ -24,8 +24,12 @@ elif [[ -e "/dev/fd/1" && -w "/dev/fd/1" && ! -S "/dev/stdout" ]]; then
   COMMAND_OUTPUT="/dev/fd/1"
 else
   # If COMMAND_OUTPUT is still not assigned by here, fall back to posix-standard /dev/null
-  echo "WARNING: Could not find a writable, non-socket stdout redirect target!"
-  echo "WARNING: Further HNVM output will be redirected to '/dev/null'"
+  #
+  # Very important: any debug warnings should ONLY go to stderr.
+  # If these echoes go to stdout, you get issues like this:
+  # https://compass-tech.atlassian.net/jira/servicedesk/projects/TIP/queues/custom/268/TIP-8901
+  echo "WARNING: Could not find a writable, non-socket stdout redirect target!" >&2
+  echo "WARNING: Further HNVM output will be redirected to '/dev/null'" >&2
   COMMAND_OUTPUT="/dev/null"
 fi
 
