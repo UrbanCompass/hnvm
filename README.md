@@ -8,7 +8,6 @@ Node Version Manager. Having our `node` binaries be hermetic means each app or p
 version of `node` they depend on. That version is installed and used to run whenever the package
 runs scripts in `node`, `npm`, `pnpm`, and `yarn`. This ensures that everyone's systems output
 consistent packages, and upgrades required by one package don't affect another.
-
 ## Installation
 
 ### [Homebrew](https://brew.sh) (Compass Employees Only)
