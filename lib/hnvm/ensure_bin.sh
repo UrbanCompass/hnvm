@@ -57,10 +57,10 @@ function download_node() {
 
   node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}.tar.gz"
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl "$node_download_url" --silent |
+    curl "$node_download_url" --silent --fail |
       tar xz -C "${node_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
   else
-    curl "$node_download_url" |
+    curl "$node_download_url" --fail |
       tar xz -C "${node_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
   fi
 }
@@ -72,11 +72,11 @@ function download_pnpm() {
   blue "Downloading pnpm v${pnpm_ver} to ${HNVM_PATH}/pnpm" >> "${COMMAND_OUTPUT}"
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js --silent |
+    curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js --silent --fail |
       PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
       "${COMMAND_OUTPUT}"
   else
-    curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js |
+    curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js --fail |
       PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
       "${COMMAND_OUTPUT}"
   fi
@@ -89,10 +89,10 @@ function download_yarn() {
   blue "Downloading yarn v${yarn_ver} to ${HNVM_PATH}/yarn" >> "${COMMAND_OUTPUT}"
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --silent |
+    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --silent --fail |
       tar xz -C "${yarn_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
   else
-    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" |
+    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --fail |
       tar xz -C "${yarn_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
   fi
 }
