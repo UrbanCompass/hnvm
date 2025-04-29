@@ -73,7 +73,7 @@ function download_pnpm() {
 
   pnpm_installer_script=$(cat "${script_dir}/../pnpm-self-installer/install.js")
 
-  echo $pnpm_installer_script | PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
+  echo "$pnpm_installer_script" | PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
     "${COMMAND_OUTPUT}"
 }
 
