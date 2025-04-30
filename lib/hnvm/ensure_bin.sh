@@ -71,15 +71,10 @@ function download_pnpm() {
 
   blue "Downloading pnpm v${pnpm_ver} to ${HNVM_PATH}/pnpm" >> "${COMMAND_OUTPUT}"
 
-  if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js --silent --fail |
-      PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
-      "${COMMAND_OUTPUT}"
-  else
-    curl -L https://raw.githubusercontent.com/pnpm/self-installer/master/install.js --fail |
-      PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
-      "${COMMAND_OUTPUT}"
-  fi
+  pnpm_installer_script=$(cat "${script_dir}/../pnpm-self-installer/install.js")
+
+  echo "$pnpm_installer_script" | PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
+    "${COMMAND_OUTPUT}"
 }
 
 function download_yarn() {
