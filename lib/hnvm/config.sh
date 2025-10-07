@@ -25,6 +25,7 @@ if [[ -n "$HNVM_OUTPUT_DESTINATION" ]]; then
   else
     COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
   fi
+# Default command output to stderr to not interfere with expected stdout from underlying tools
 elif [[ -w "/dev/fd/2" ]]; then
   COMMAND_OUTPUT="/dev/fd/2"
 elif [[ -w "/dev/stderr" ]]; then
