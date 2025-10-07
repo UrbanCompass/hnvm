@@ -36,20 +36,13 @@ fi
 export COMMAND_OUTPUT
 
 # Helper function to write to COMMAND_OUTPUT
-# Usage: output_message "some message" [color_function]
-# Example: output_message "Downloading..." blue
-function output_message() {
-  local message="$1"
-  local color_fn="$2"
-  
-  if [[ -n "$color_fn" ]]; then
-    message="$($color_fn "$message")"
-  fi
-  
+# Usage: echo "message" | write_to_hnvm_output
+# Or with colors: blue "message" | write_to_hnvm_output
+function write_to_hnvm_output() {
   if [[ "$COMMAND_OUTPUT" == "&2" ]]; then
-    echo "$message" >&2
+    cat >&2
   else
-    echo "$message" >> "${COMMAND_OUTPUT}"
+    cat >> "${COMMAND_OUTPUT}"
   fi
 }
 
@@ -205,7 +198,7 @@ function resolve_ver() {
     if [ -f "${cache_file}" ] && [ "$(( $(date +"%s") - HNVM_RANGE_CACHE ))" -le "$(date -r "${cache_file}" +"%s")" ]; then
       ver="$(cat "${cache_file}")"
     else
-      output_message "Resolving ${name} \"${ver}\" is slower than providing an exact version." yellow
+      yellow "Warning: Resolving ${name} \"${ver}\" is slower than providing an exact version." | write_to_hnvm_output
 
       # Try to resolve a version tag directly from the registry first, but gracefully fail if it's malformed.
       ver="$(curl "https://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version' || echo 'INVALID')"
@@ -228,7 +221,7 @@ EOF
 
         # If we didn't have a local copy, fetch the list of versions in existence and use the latest in the range.
         if is_invalid_version "$ver"; then
-          output_message "\"${initial_ver}\" is not satisfied by any local version and must be resolved asynchronously." yellow
+          yellow "\"${initial_ver}\" is not satisfied by any local version and must be resolved asynchronously." | write_to_hnvm_output
           npm_package_info="$(curl "https://registry.npmjs.org/${name}" --silent)" > /dev/null
           matching_versions_input=$(cat <<EOF
 {
@@ -251,7 +244,7 @@ EOF
     fi
   fi
 
-  output_message "Resolved $name ${initial_ver} to ${ver}" blue
+  blue "Resolved $name ${initial_ver} to ${ver}" | write_to_hnvm_output
   resolve_ver_result=${ver}
 }
 
