@@ -1,4 +1,5 @@
 const {createTestContext} = require('./utils.js')
+const path = require('path')
 
 jest.setTimeout(60_000)
 
@@ -12,6 +13,20 @@ describe('node stderr output behavior', () => {
 
   afterAll(() => {
     context.cleanup()
+  })
+
+  it('should detect stderr as writable', () => {
+    // Test what COMMAND_OUTPUT gets set to
+    const configPath = path.join(__dirname, '../lib/hnvm/config.sh')
+    const result = context.execFileSyncSeparateStreams('bash', [
+      '-c',
+      'source ' + configPath + ' && echo "COMMAND_OUTPUT=$COMMAND_OUTPUT"'
+    ])
+    
+    console.log('COMMAND_OUTPUT detection result:', result.stdout)
+    console.log('stderr:', result.stderr)
+    
+    expect(result.stdout).toMatch(/COMMAND_OUTPUT=\/dev\/(fd\/2|stderr)/)
   })
 
   it('should send HNVM messages to stderr by default', () => {
