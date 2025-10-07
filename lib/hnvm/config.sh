@@ -15,13 +15,21 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 COMMAND_OUTPUT=""
 
 # HNVM messaging should go to stderr to avoid interfering with stdout from node/pnpm
-if [[ -e "/dev/stderr" && -w "/dev/stderr" && ! -S "/dev/stderr" ]]; then
-  COMMAND_OUTPUT="/dev/stderr"
-elif [[ -e "/dev/fd/2" && -w "/dev/fd/2" && ! -S "/dev/fd/2" ]]; then
+# Context for why we check for sockets:
+# https://github.com/UrbanCompass/hnvm/pull/55#discussion_r1583426262
+if [[ -n "$HNVM_OUTPUT_DESTINATION" ]]; then
+  if [[ -S "$HNVM_OUTPUT_DESTINATION" ]]; then
+    echo "WARNING: Could not find a writable, non-socket stdout redirect target!" >&2
+    echo "WARNING: Further HNVM output will be redirected to '/dev/null'" >&2
+    COMMAND_OUTPUT="/dev/null"
+  else
+    COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
+  fi
+elif [[ -w "/dev/fd/2" ]]; then
   COMMAND_OUTPUT="/dev/fd/2"
+elif [[ -w "/dev/stderr" ]]; then
+  COMMAND_OUTPUT="/dev/stderr"
 else
-  echo "WARNING: Could not find a writable, non-socket stderr redirect target!" >&2
-  echo "WARNING: Further HNVM output will be redirected to '/dev/null'" >&2
   COMMAND_OUTPUT="/dev/null"
 fi
 
@@ -69,8 +77,6 @@ done
 
 if [ "$HNVM_QUIET" == "true" ]; then
   COMMAND_OUTPUT=/dev/null
-else
-  COMMAND_OUTPUT=/dev/stderr
 fi
 
 # Try version from package.json engines field
