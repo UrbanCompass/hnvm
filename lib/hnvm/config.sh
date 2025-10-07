@@ -14,21 +14,13 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
 COMMAND_OUTPUT=""
 
-# Context for why we try multiple output redirect targets:
-# https://github.com/UrbanCompass/hnvm/pull/55#discussion_r1583426262
-if [[ -n "$HNVM_OUTPUT_DESTINATION" && ! -S "$HNVM_OUTPUT_DESTINATION" ]]; then
-  COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
-elif [[ -e "/dev/stdout" && -w "/dev/stdout" && ! -S "/dev/stdout" ]]; then
-  COMMAND_OUTPUT="/dev/stdout"
-elif [[ -e "/dev/fd/1" && -w "/dev/fd/1" && ! -S "/dev/stdout" ]]; then
-  COMMAND_OUTPUT="/dev/fd/1"
+# HNVM messaging should go to stderr to avoid interfering with stdout from node/pnpm
+if [[ -e "/dev/stderr" && -w "/dev/stderr" && ! -S "/dev/stderr" ]]; then
+  COMMAND_OUTPUT="/dev/stderr"
+elif [[ -e "/dev/fd/2" && -w "/dev/fd/2" && ! -S "/dev/fd/2" ]]; then
+  COMMAND_OUTPUT="/dev/fd/2"
 else
-  # If COMMAND_OUTPUT is still not assigned by here, fall back to posix-standard /dev/null
-  #
-  # Very important: any debug warnings should ONLY go to stderr.
-  # If these echoes go to stdout, you get issues like this:
-  # https://compass-tech.atlassian.net/jira/servicedesk/projects/TIP/queues/custom/268/TIP-8901
-  echo "WARNING: Could not find a writable, non-socket stdout redirect target!" >&2
+  echo "WARNING: Could not find a writable, non-socket stderr redirect target!" >&2
   echo "WARNING: Further HNVM output will be redirected to '/dev/null'" >&2
   COMMAND_OUTPUT="/dev/null"
 fi
@@ -77,6 +69,8 @@ done
 
 if [ "$HNVM_QUIET" == "true" ]; then
   COMMAND_OUTPUT=/dev/null
+else
+  COMMAND_OUTPUT=/dev/stderr
 fi
 
 # Try version from package.json engines field
