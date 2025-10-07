@@ -26,15 +26,26 @@ if [[ -n "$HNVM_OUTPUT_DESTINATION" ]]; then
     COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
   fi
 # Default command output to stderr to not interfere with expected stdout from underlying tools
-elif [[ -w "/dev/fd/2" ]]; then
-  COMMAND_OUTPUT="/dev/fd/2"
+# In Docker/CI environments, /dev/fd/2 may not work with >> redirection, so use stderr directly
 elif [[ -w "/dev/stderr" ]]; then
-  COMMAND_OUTPUT="/dev/stderr"
+  COMMAND_OUTPUT="&2"
+elif [[ -w "/dev/fd/2" ]]; then
+  COMMAND_OUTPUT="&2"
 else
   COMMAND_OUTPUT="/dev/null"
 fi
 
 export COMMAND_OUTPUT
+
+# Helper function to write to COMMAND_OUTPUT
+# Usage: output_message "some message"
+function output_message() {
+  if [[ "$COMMAND_OUTPUT" == "&2" ]]; then
+    echo "$@" >&2
+  else
+    echo "$@" >> "${COMMAND_OUTPUT}"
+  fi
+}
 
 # Set these defaults here instead of the rc file so that HNVM_NOFALLBACK never blocks these defaults
 export HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
@@ -77,7 +88,7 @@ for i in "${dirs_array[@]}"; do
 done
 
 if [ "$HNVM_QUIET" == "true" ]; then
-  COMMAND_OUTPUT=/dev/null
+  COMMAND_OUTPUT="/dev/null"
 fi
 
 # Try version from package.json engines field
@@ -156,7 +167,7 @@ function is_invalid_version() {
 # Finds _any_ locally available copy of node and sets `available_node_bin` to its path.
 function find_local_node() {
   local available_node_ver=
-  available_node_ver="$(find "$HNVM_PATH/node/"* | head -n 1)"
+  available_node_ver="$(find "$HNVM_PATH/node/"* 2>/dev/null | head -n 1)"
   if [ -z "$available_node_ver" ]; then
     red "No local copy of node available. Please use hnvm at least once on a specific version before attempting semver ranges."
     exit 1
@@ -188,10 +199,14 @@ function resolve_ver() {
     if [ -f "${cache_file}" ] && [ "$(( $(date +"%s") - HNVM_RANGE_CACHE ))" -le "$(date -r "${cache_file}" +"%s")" ]; then
       ver="$(cat "${cache_file}")"
     else
-      echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' "'"${ver}"'" is slower than providing an exact version.'  >> "${COMMAND_OUTPUT}"
+      if [[ "$COMMAND_OUTPUT" == "&2" ]]; then
+        echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' "'"${ver}"'" is slower than providing an exact version.' >&2
+      else
+        echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' "'"${ver}"'" is slower than providing an exact version.' >> "${COMMAND_OUTPUT}"
+      fi
 
       # Try to resolve a version tag directly from the registry first, but gracefully fail if it's malformed.
-      ver="$(curl "https://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version' || echo 'INVALID')"  >> "${COMMAND_OUTPUT}"
+      ver="$(curl "https://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version' || echo 'INVALID')"
       if is_invalid_version "$ver"; then
         find_local_node
 
@@ -211,7 +226,11 @@ EOF
 
         # If we didn't have a local copy, fetch the list of versions in existence and use the latest in the range.
         if is_invalid_version "$ver"; then
-          echo -e $'\e[33mWarning\e[0m: "'"${initial_ver}"'" is not satisfied by any local version and must be resolved asynchronously.'  >> "${COMMAND_OUTPUT}"
+          if [[ "$COMMAND_OUTPUT" == "&2" ]]; then
+            echo -e $'\e[33mWarning\e[0m: "'"${initial_ver}"'" is not satisfied by any local version and must be resolved asynchronously.' >&2
+          else
+            echo -e $'\e[33mWarning\e[0m: "'"${initial_ver}"'" is not satisfied by any local version and must be resolved asynchronously.' >> "${COMMAND_OUTPUT}"
+          fi
           npm_package_info="$(curl "https://registry.npmjs.org/${name}" --silent)" > /dev/null
           matching_versions_input=$(cat <<EOF
 {
@@ -234,7 +253,11 @@ EOF
     fi
   fi
 
-  blue """Resolved $name ""${initial_ver}"" to ${ver}""" >> "${COMMAND_OUTPUT}"
+  if [[ "$COMMAND_OUTPUT" == "&2" ]]; then
+    echo $'\e[1;34m'"Resolved $name ${initial_ver} to ${ver}"$'\e[0m' >&2
+  else
+    echo $'\e[1;34m'"Resolved $name ${initial_ver} to ${ver}"$'\e[0m' >> "${COMMAND_OUTPUT}"
+  fi
   resolve_ver_result=${ver}
 }
 

@@ -26,7 +26,7 @@ describe('node stderr output behavior', () => {
     console.log('COMMAND_OUTPUT detection result:', result.stdout)
     console.log('stderr:', result.stderr)
     
-    expect(result.stdout).toMatch(/COMMAND_OUTPUT=\/dev\/(fd\/2|stderr)/)
+    expect(result.stdout).toMatch(/COMMAND_OUTPUT=(&2|\/dev\/(fd\/2|stderr))/)
   })
 
   it('should send HNVM messages to stderr by default', () => {
