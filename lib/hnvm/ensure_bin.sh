@@ -57,9 +57,11 @@ function download_node() {
 
   node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}.tar.gz"
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl "$node_download_url" --silent --fail | tar xz -C "${node_path}" --strip-components=1 | write_to_hnvm_output
+    curl "$node_download_url" --silent --fail |
+      tar xz -C "${node_path}" --strip-components=1 | write_to_hnvm_output
   else
-    curl "$node_download_url" --fail | tar xz -C "${node_path}" --strip-components=1 | write_to_hnvm_output
+    curl "$node_download_url" --fail |
+      tar xz -C "${node_path}" --strip-components=1 | write_to_hnvm_output
   fi
 }
 
@@ -81,22 +83,24 @@ function download_yarn() {
   blue "Downloading yarn v${yarn_ver} to ${HNVM_PATH}/yarn" | write_to_hnvm_output
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --silent --fail | tar xz -C "${yarn_path}" --strip-components=1 | write_to_hnvm_output
+    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --silent --fail |
+      tar xz -C "${yarn_path}" --strip-components=1 | write_to_hnvm_output
   else
-    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --fail | tar xz -C "${yarn_path}" --strip-components=1 | write_to_hnvm_output
+    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --fail |
+      tar xz -C "${yarn_path}" --strip-components=1 | write_to_hnvm_output
   fi
 }
 
 # Something's globally installing pnpm and pnpx, need to remove otherwise npm scripts won't use
 # hnvm and they'll use this globally installed one instead
 if [[ -f "${node_path}/bin/pnpm" ]]; then
-  yellow "WARNING: Found conflicting global install of pnpm, removing..." | write_to_hnvm_output
-  rm "${node_path}/bin/pnpm"
+  warning "Found conflicting global install of pnpm, removing..." | write_to_hnvm_output
+  rm "${node_path}/bin/pnpm" | write_to_hnvm_output
 fi
 
 if [[ -f "${node_path}/bin/pnpx" ]]; then
-  yellow "WARNING: Found conflicting global install of pnpx, removing..." | write_to_hnvm_output
-  rm "${node_path}/bin/pnpx"
+  warning "Found conflicting global install of pnpx, removing..." | write_to_hnvm_output
+  rm "${node_path}/bin/pnpx" | write_to_hnvm_output
 fi
 
 # pnpm 6+ uses .cjs files for its bins
