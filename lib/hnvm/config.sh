@@ -27,9 +27,7 @@ if [[ -n "$HNVM_OUTPUT_DESTINATION" ]]; then
   fi
 # Default command output to stderr to not interfere with expected stdout from underlying tools
 # In Docker/CI environments, /dev/fd/2 may not work with >> redirection, so use stderr directly
-elif [[ -w "/dev/stderr" ]]; then
-  COMMAND_OUTPUT="&2"
-elif [[ -w "/dev/fd/2" ]]; then
+elif [[ -w "/dev/stderr" || -w "/dev/fd/2" ]]; then
   COMMAND_OUTPUT="&2"
 else
   COMMAND_OUTPUT="/dev/null"
