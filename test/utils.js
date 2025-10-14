@@ -96,6 +96,16 @@ function createTestContext() {
 
       return hnvmProcess;
     },
+    execFileSyncSeparateStreams(file, args) {
+      // Execute without HNVM_OUTPUT_DESTINATION so we can test default stderr behavior
+      const hnvmProcess = childProcess.spawnSync(file, args, {
+        encoding: 'utf-8',
+        env: {HNVM_PATH: hnvmDir, PATH: process.env.PATH},
+        cwd: cwdDir,
+      });
+
+      return hnvmProcess;
+    },
   }
 }
 

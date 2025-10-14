@@ -53,15 +53,15 @@ function download_node() {
   rm -rf "${node_path}"
   mkdir -p "${node_path}"
 
-  blue "Downloading node v${node_ver} to ${HNVM_PATH}/node" >> "${COMMAND_OUTPUT}"
+  blue "Downloading node v${node_ver} to ${HNVM_PATH}/node" | write_to_hnvm_output
 
   node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}.tar.gz"
   if [[ "${HNVM_QUIET}" == "true" ]]; then
     curl "$node_download_url" --silent --fail |
-      tar xz -C "${node_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
+      tar xz -C "${node_path}" --strip-components=1 | write_to_hnvm_output
   else
     curl "$node_download_url" --fail |
-      tar xz -C "${node_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
+      tar xz -C "${node_path}" --strip-components=1 | write_to_hnvm_output
   fi
 }
 
@@ -69,39 +69,38 @@ function download_pnpm() {
   rm -rf "${pnpm_path}"
   mkdir -p "${pnpm_path}"
 
-  blue "Downloading pnpm v${pnpm_ver} to ${HNVM_PATH}/pnpm" >> "${COMMAND_OUTPUT}"
+  blue "Downloading pnpm v${pnpm_ver} to ${HNVM_PATH}/pnpm" | write_to_hnvm_output
 
   pnpm_installer_script=$(cat "${script_dir}/../pnpm-self-installer/install.js")
 
-  echo "$pnpm_installer_script" | PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} >> \
-    "${COMMAND_OUTPUT}"
+  echo "$pnpm_installer_script" | PNPM_VERSION=${pnpm_ver} PNPM_DEST=${pnpm_path} PNPM_REGISTRY=${HNVM_PNPM_REGISTRY} ${node_bin} | write_to_hnvm_output
 }
 
 function download_yarn() {
   rm -rf "${yarn_path}"
   mkdir -p "${yarn_path}"
 
-  blue "Downloading yarn v${yarn_ver} to ${HNVM_PATH}/yarn" >> "${COMMAND_OUTPUT}"
+  blue "Downloading yarn v${yarn_ver} to ${HNVM_PATH}/yarn" | write_to_hnvm_output
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
     curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --silent --fail |
-      tar xz -C "${yarn_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
+      tar xz -C "${yarn_path}" --strip-components=1 | write_to_hnvm_output
   else
     curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --fail |
-      tar xz -C "${yarn_path}" --strip-components=1 >> "${COMMAND_OUTPUT}"
+      tar xz -C "${yarn_path}" --strip-components=1 | write_to_hnvm_output
   fi
 }
 
 # Something's globally installing pnpm and pnpx, need to remove otherwise npm scripts won't use
 # hnvm and they'll use this globally installed one instead
 if [[ -f "${node_path}/bin/pnpm" ]]; then
-  warning "Found conflicting global install of pnpm, removing..." >> "${COMMAND_OUTPUT}"
-  rm "${node_path}/bin/pnpm" >> "${COMMAND_OUTPUT}"
+  warning "Found conflicting global install of pnpm, removing..." | write_to_hnvm_output
+  rm "${node_path}/bin/pnpm" | write_to_hnvm_output
 fi
 
 if [[ -f "${node_path}/bin/pnpx" ]]; then
-  warning "Found conflicting global install of pnpx, removing..." >> "${COMMAND_OUTPUT}"
-  rm "${node_path}/bin/pnpx" >> "${COMMAND_OUTPUT}"
+  warning "Found conflicting global install of pnpx, removing..." | write_to_hnvm_output
+  rm "${node_path}/bin/pnpx" | write_to_hnvm_output
 fi
 
 # pnpm 6+ uses .cjs files for its bins
@@ -134,4 +133,4 @@ if [ -f "${pnpm_path}/bin/pnpx.cjs" ]; then
   pnpx_bin="${pnpm_path}/bin/pnpx.cjs"
 fi
 
-blue "Using Hermetic NodeJS v${node_ver}" >> "${COMMAND_OUTPUT}"
+blue "Using Hermetic NodeJS v${node_ver}" | write_to_hnvm_output

@@ -14,26 +14,37 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
 COMMAND_OUTPUT=""
 
-# Context for why we try multiple output redirect targets:
+# HNVM messaging should go to stderr to avoid interfering with stdout from node/pnpm
+# Context for why we check for sockets:
 # https://github.com/UrbanCompass/hnvm/pull/55#discussion_r1583426262
-if [[ -n "$HNVM_OUTPUT_DESTINATION" && ! -S "$HNVM_OUTPUT_DESTINATION" ]]; then
-  COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
-elif [[ -e "/dev/stdout" && -w "/dev/stdout" && ! -S "/dev/stdout" ]]; then
-  COMMAND_OUTPUT="/dev/stdout"
-elif [[ -e "/dev/fd/1" && -w "/dev/fd/1" && ! -S "/dev/stdout" ]]; then
-  COMMAND_OUTPUT="/dev/fd/1"
+if [[ -n "$HNVM_OUTPUT_DESTINATION" ]]; then
+  if [[ -S "$HNVM_OUTPUT_DESTINATION" ]]; then
+    echo "WARNING: Could not find a writable, non-socket stdout redirect target!" >&2
+    echo "WARNING: Further HNVM output will be redirected to '/dev/null'" >&2
+    COMMAND_OUTPUT="/dev/null"
+  else
+    COMMAND_OUTPUT="$HNVM_OUTPUT_DESTINATION"
+  fi
+# Default command output to stderr to not interfere with expected stdout from underlying tools
+# In Docker/CI environments, /dev/fd/2 may not work with >> redirection, so use stderr directly
+elif [[ -w "/dev/stderr" || -w "/dev/fd/2" ]]; then
+  COMMAND_OUTPUT="&2"
 else
-  # If COMMAND_OUTPUT is still not assigned by here, fall back to posix-standard /dev/null
-  #
-  # Very important: any debug warnings should ONLY go to stderr.
-  # If these echoes go to stdout, you get issues like this:
-  # https://compass-tech.atlassian.net/jira/servicedesk/projects/TIP/queues/custom/268/TIP-8901
-  echo "WARNING: Could not find a writable, non-socket stdout redirect target!" >&2
-  echo "WARNING: Further HNVM output will be redirected to '/dev/null'" >&2
   COMMAND_OUTPUT="/dev/null"
 fi
 
 export COMMAND_OUTPUT
+
+# Helper function to write to COMMAND_OUTPUT
+# Usage: echo "message" | write_to_hnvm_output
+# Or with colors: blue "message" | write_to_hnvm_output
+function write_to_hnvm_output() {
+  if [[ "$COMMAND_OUTPUT" == "&2" ]]; then
+    cat >&2
+  else
+    cat >> "${COMMAND_OUTPUT}"
+  fi
+}
 
 # Set these defaults here instead of the rc file so that HNVM_NOFALLBACK never blocks these defaults
 export HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
@@ -187,10 +198,10 @@ function resolve_ver() {
     if [ -f "${cache_file}" ] && [ "$(( $(date +"%s") - HNVM_RANGE_CACHE ))" -le "$(date -r "${cache_file}" +"%s")" ]; then
       ver="$(cat "${cache_file}")"
     else
-      echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' "'"${ver}"'" is slower than providing an exact version.'  >> "${COMMAND_OUTPUT}"
+      echo -e $'\e[33mWarning\e[0m: Resolving '"${name}"' "'"${ver}"'" is slower than providing an exact version.'  | write_to_hnvm_output
 
       # Try to resolve a version tag directly from the registry first, but gracefully fail if it's malformed.
-      ver="$(curl "https://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version' || echo 'INVALID')"  >> "${COMMAND_OUTPUT}"
+      ver="$(curl "https://registry.npmjs.org/${name}/${ver}" --silent | jq -r '.version' || echo 'INVALID')"
       if is_invalid_version "$ver"; then
         find_local_node
 
@@ -210,7 +221,7 @@ EOF
 
         # If we didn't have a local copy, fetch the list of versions in existence and use the latest in the range.
         if is_invalid_version "$ver"; then
-          echo -e $'\e[33mWarning\e[0m: "'"${initial_ver}"'" is not satisfied by any local version and must be resolved asynchronously.'  >> "${COMMAND_OUTPUT}"
+          echo -e $'\e[33mWarning\e[0m: "'"${initial_ver}"'" is not satisfied by any local version and must be resolved asynchronously.'  | write_to_hnvm_output
           npm_package_info="$(curl "https://registry.npmjs.org/${name}" --silent)" > /dev/null
           matching_versions_input=$(cat <<EOF
 {
@@ -233,7 +244,7 @@ EOF
     fi
   fi
 
-  blue """Resolved $name ""${initial_ver}"" to ${ver}""" >> "${COMMAND_OUTPUT}"
+  blue """Resolved $name ""${initial_ver}"" to ${ver}""" | write_to_hnvm_output
   resolve_ver_result=${ver}
 }
 
