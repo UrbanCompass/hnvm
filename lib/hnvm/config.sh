@@ -63,7 +63,7 @@ available_node_bin=
 
 # Read and export rcfile variables from configured directories
 exports=''
-rc_dirs="${PWD};.git;${HOME};${script_dir}/.."
+rc_dirs="${PWD};.git;${HOME};${script_dir}/../.."
 IFS=';' read -ra dirs_array <<< "$rc_dirs"
 for i in "${dirs_array[@]}"; do
   rc_file="$i/.hnvmrc"
