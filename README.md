@@ -49,7 +49,7 @@ node -v # No longer uses hnvm node script
 ```
 
 Note that `hnvm` depends on [`jq`](https://stedolan.github.io/jq/) being available in your global
-`$PATH`, and if you don't use `brew` you'll have to make sure that `jq` is installed on your own.
+`$PATH`. If you don't install hnvm via `brew` or `basher`, you'll have to make sure that `jq` is installed on your own.
 
 ## Usage
 
