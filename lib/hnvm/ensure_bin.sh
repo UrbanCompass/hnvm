@@ -33,7 +33,7 @@ export yarn_bin="${yarn_path}/bin/yarn.js"
 
 function download_node() {
   platform=
-  if [[ "${OSTYPE}" == "linux-gnu" ]]; then
+  if [[ "${OSTYPE}" == "linux-"* ]]; then
     platform="linux"
   elif [[ "${OSTYPE}" == "darwin"* ]]; then
     platform="darwin"
