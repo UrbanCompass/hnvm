@@ -168,6 +168,10 @@ that the repository layout mirrors that of nodejs.org:
 /node-v${node_ver}-${platform}-${cpu_arch}.tar.gz
 ```
 
+### `HNVM_NODE_VARIANT` (Defaults to '')
+
+Variant of the NodeJS distribution files to fetch. This exists mostly to support the `musl` builds.
+
 ### `HNVM_PNPM_REGISTRY` (Defaults to `https://registry.npmjs.org`)
 
 If using the `--with-pnpm` flag, `npm`-compatible registry to install `pnpm` from. Defaults to the

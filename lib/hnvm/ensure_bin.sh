@@ -55,7 +55,12 @@ function download_node() {
 
   blue "Downloading node v${node_ver} to ${HNVM_PATH}/node" | write_to_hnvm_output
 
-  node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}.tar.gz"
+  variant=""
+  if ! [[ -z "${HNVM_NODE_VARIANT}" ]]; then
+    variant="-${HNVM_NODE_VARIANT}"
+  fi
+
+  node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}${variant}.tar.gz"
   if [[ "${HNVM_QUIET}" == "true" ]]; then
     curl "$node_download_url" --silent --fail |
       tar xz -C "${node_path}" --strip-components=1 | write_to_hnvm_output
