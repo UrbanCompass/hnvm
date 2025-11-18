@@ -51,8 +51,10 @@ export HNVM_PATH=${HNVM_PATH:-$HOME/.hnvm}
 export HNVM_RANGE_CACHE=${HNVM_RANGE_CACHE:-60}
 export HNVM_QUIET=${HNVM_QUIET:-false}
 export HNVM_NODE_DIST=${HNVM_NODE_DIST:-'https://nodejs.org/dist'}
+export HNVM_NODE_VARIANT=${HNVM_NODE_VARIANT:-''}
 export HNVM_PNPM_REGISTRY=${HNVM_PNPM_REGISTRY:-'https://registry.npmjs.org'}
 export HNVM_YARN_DIST=${HNVM_YARN_DIST:-'https://yarnpkg.com/downloads'}
+export HNVM_SKIP_URL_VALIDATION=${HNVM_SKIP_URL_VALIDATION:-false}
 
 # Read env vars set in profile or at runtime
 export node_ver="${HNVM_NODE}"

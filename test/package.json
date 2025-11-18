@@ -8,7 +8,8 @@
     "test": "jest"
   },
   "engines": {
-    "hnvm": "17.1.0"
+    "hnvm": "18.12.0",
+    "pnpm": "10.22.0"
   },
   "jest": {
     "testEnvironment": "node"
