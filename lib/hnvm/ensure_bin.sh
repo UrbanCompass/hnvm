@@ -33,7 +33,6 @@ export yarn_bin="${yarn_path}/bin/yarn.js"
 
 function validate_url() {
   local url="$1"
-  local description="$2"
   
   if [[ "${HNVM_SKIP_URL_VALIDATION}" == "true" ]]; then
     return 0
