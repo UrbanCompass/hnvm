@@ -74,7 +74,7 @@ function download_node() {
   mkdir -p "${node_path}"
 
   variant=""
-  if ! [[ -z "${HNVM_NODE_VARIANT}" ]]; then
+  if [[ -n "${HNVM_NODE_VARIANT}" ]]; then
     variant="-${HNVM_NODE_VARIANT}"
   fi
 
