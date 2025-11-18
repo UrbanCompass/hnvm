@@ -172,6 +172,10 @@ that the repository layout mirrors that of nodejs.org:
 
 Variant of the NodeJS distribution files to fetch. This exists mostly to support the `musl` builds.
 
+### `HNVM_SKIP_URL_VALIDATION` (Defaults to `false`)
+
+When set to `true`, skips the HEAD request validation before downloading packages. By default, hnvm validates that download URLs are accessible before attempting to download, which provides faster failure feedback and clearer error messages. Set this to `true` if you want to skip validation (e.g., in environments where HEAD requests are blocked but GET requests work).
+
 ### `HNVM_PNPM_REGISTRY` (Defaults to `https://registry.npmjs.org`)
 
 If using the `--with-pnpm` flag, `npm`-compatible registry to install `pnpm` from. Defaults to the

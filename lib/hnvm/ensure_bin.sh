@@ -31,6 +31,27 @@ export pnpx_bin="${pnpm_path}/bin/pnpx.js"
 export yarn_path="${HNVM_PATH}/yarn/${yarn_ver}"
 export yarn_bin="${yarn_path}/bin/yarn.js"
 
+function validate_url() {
+  local url="$1"
+  local description="$2"
+  
+  if [[ "${HNVM_SKIP_URL_VALIDATION}" == "true" ]]; then
+    return 0
+  fi
+
+  if curl --head --silent --fail --location --output /dev/null "$url"; then
+    return 0
+  else
+    error "URL validation failed: ${url}"
+    error "The requested package/version may not exist or the URL is incorrect."
+    if [[ -n "${HNVM_NODE_VARIANT}" ]]; then
+      error "Note: You are using HNVM_NODE_VARIANT='${HNVM_NODE_VARIANT}'"
+      error "This variant may not be available for the requested version/platform."
+    fi
+    return 1
+  fi
+}
+
 function download_node() {
   platform=
   if [[ "${OSTYPE}" == "linux-"* ]]; then
@@ -53,14 +74,20 @@ function download_node() {
   rm -rf "${node_path}"
   mkdir -p "${node_path}"
 
-  blue "Downloading node v${node_ver} to ${HNVM_PATH}/node" | write_to_hnvm_output
-
   variant=""
   if ! [[ -z "${HNVM_NODE_VARIANT}" ]]; then
     variant="-${HNVM_NODE_VARIANT}"
   fi
 
   node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}${variant}.tar.gz"
+  
+  # Validate URL before attempting download
+  if ! validate_url "$node_download_url" "Node.js v${node_ver}${variant}"; then
+    exit 1
+  fi
+
+  blue "Downloading node v${node_ver} to ${HNVM_PATH}/node" | write_to_hnvm_output
+
   if [[ "${HNVM_QUIET}" == "true" ]]; then
     curl "$node_download_url" --silent --fail |
       tar xz -C "${node_path}" --strip-components=1 | write_to_hnvm_output
@@ -85,13 +112,20 @@ function download_yarn() {
   rm -rf "${yarn_path}"
   mkdir -p "${yarn_path}"
 
+  yarn_download_url="${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz"
+  
+  # Validate URL before attempting download
+  if ! validate_url "$yarn_download_url" "Yarn v${yarn_ver}"; then
+    exit 1
+  fi
+
   blue "Downloading yarn v${yarn_ver} to ${HNVM_PATH}/yarn" | write_to_hnvm_output
 
   if [[ "${HNVM_QUIET}" == "true" ]]; then
-    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --silent --fail |
+    curl -L "$yarn_download_url" --silent --fail |
       tar xz -C "${yarn_path}" --strip-components=1 | write_to_hnvm_output
   else
-    curl -L "${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz" --fail |
+    curl -L "$yarn_download_url" --fail |
       tar xz -C "${yarn_path}" --strip-components=1 | write_to_hnvm_output
   fi
 }

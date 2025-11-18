@@ -18,33 +18,29 @@ describe('node with a variant', () => {
     context.cleanup()
   })
 
-  it('should fail with 404 when trying to download a non-existent variant', () => {
-    const outputFile = path.join(context.testDir, 'stdout')
-    fs.writeFileSync(outputFile, '')
-
-    // Use a variant that doesn't exist to verify the URL construction
+  it('should fail validation when trying to use a non-existent variant', () => {
+    // Use a variant that doesn't exist to verify the URL construction and validation
     const nonExistentVariant = 'nonexistent-variant-test'
     
-    try {
-      childProcess.execFileSync(context.binaries.node, ['--version'], {
-        encoding: 'utf-8',
-        env: {
-          HNVM_PATH: context.hnvmDir, 
-          HNVM_OUTPUT_DESTINATION: outputFile,
-          HNVM_NODE_VARIANT: nonExistentVariant,
-          PATH: process.env.PATH
-        },
-        cwd: context.cwdDir,
-        stdio: 'pipe'
-      })
-      // If we reach here, the test should fail because we expect an error
-      throw new Error('Expected execFileSync to throw an error for non-existent variant')
-    } catch (error) {
-      // The curl command should fail with 404 when trying to download a non-existent variant
-      // This confirms the variant is being appended to the URL
-      expect(error.status).not.toBe(0)
-      expect(error.stderr.toString()).toContain('404')
-    }
+    // Use spawnSync to capture stderr (where error messages go)
+    const result = childProcess.spawnSync(context.binaries.node, ['--version'], {
+      encoding: 'utf-8',
+      env: {
+        HNVM_PATH: context.hnvmDir,
+        HNVM_NODE_VARIANT: nonExistentVariant,
+        PATH: process.env.PATH
+      },
+      cwd: context.cwdDir,
+    })
+    
+    // Should fail during URL validation
+    expect(result.status).not.toBe(0)
+    
+    // Error messages go to stderr
+    expect(result.stderr).toContain('URL validation failed')
+    
+    // Should mention the variant in the error message
+    expect(result.stderr).toContain(`HNVM_NODE_VARIANT='${nonExistentVariant}'`)
   })
 
   it('should work without variant when HNVM_NODE_VARIANT is not set', () => {
