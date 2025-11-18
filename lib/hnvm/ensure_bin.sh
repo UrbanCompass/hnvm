@@ -81,7 +81,7 @@ function download_node() {
   node_download_url="${HNVM_NODE_DIST}/v${node_ver}/node-v${node_ver}-${platform}-${cpu_arch}${variant}.tar.gz"
   
   # Validate URL before attempting download
-  if ! validate_url "$node_download_url" "Node.js v${node_ver}${variant}"; then
+  if ! validate_url "$node_download_url"; then
     exit 1
   fi
 
@@ -114,7 +114,7 @@ function download_yarn() {
   yarn_download_url="${HNVM_YARN_DIST}/${yarn_ver}/yarn-v${yarn_ver}.tar.gz"
   
   # Validate URL before attempting download
-  if ! validate_url "$yarn_download_url" "Yarn v${yarn_ver}"; then
+  if ! validate_url "$yarn_download_url"; then
     exit 1
   fi
 
