@@ -75,6 +75,7 @@ function download_node() {
 
   variant=""
   if [[ -n "${HNVM_NODE_VARIANT}" ]]; then
+    # prefix variant with '-'
     variant="-${HNVM_NODE_VARIANT}"
   fi
 
