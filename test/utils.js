@@ -59,6 +59,8 @@ function createTestContext() {
       node: path.join(hnvmBinDir, 'node'),
       npm: path.join(hnvmBinDir, 'npm'),
       pnpm: path.join(hnvmBinDir, 'pnpm'),
+      bun: path.join(hnvmBinDir, 'bun'),
+      bunx: path.join(hnvmBinDir, 'bunx'),
     },
     createPackageJson(json) {
       fs.writeFileSync(path.join(cwdDir, 'package.json'), JSON.stringify(json))
