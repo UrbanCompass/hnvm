@@ -3,7 +3,7 @@ const {createTestContext} = require('./utils.js')
 
 jest.setTimeout(60_000)
 
-describe('bun with a fixed verison', () => {
+describe('bun with a fixed version', () => {
   const VERSION = '1.3.14'
   let context
 

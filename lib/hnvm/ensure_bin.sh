@@ -54,6 +54,10 @@ function validate_url() {
       error "Note: You are using HNVM_NODE_VARIANT='${HNVM_NODE_VARIANT}'"
       error "This variant may not be available for the requested version/platform."
     fi
+    if [[ -n "${HNVM_BUN_VARIANT}" ]]; then
+      error "Note: You are using HNVM_BUN_VARIANT='${HNVM_BUN_VARIANT}'"
+      error "This variant may not be available for the requested version/platform."
+    fi
     return 1
   fi
 }

@@ -46,6 +46,7 @@ describe('bun URL validation', () => {
 
       expect(result.status).not.toBe(0)
       expect(result.stderr).toContain('URL validation failed')
+      expect(result.stderr).toContain(`HNVM_BUN_VARIANT='${nonExistentVariant}'`)
     } finally {
       context.cleanup()
     }
