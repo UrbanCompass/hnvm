@@ -209,9 +209,26 @@ function find_local_node() {
     # download_node is only defined once ensure_bin.sh has been sourced. When it's available (e.g. a
     # bun range needs resolving and no node exists yet), bootstrap a node so resolution can proceed.
     if declare -F download_node > /dev/null; then
+      # Guard against infinite recursion: resolving a node range itself calls back into
+      # find_local_node (via resolve_ver). Only attempt the bootstrap once.
+      if [[ "${node_bootstrap_attempted}" == "true" ]]; then
+        red "No local copy of node available and unable to download one for version resolution. Please use hnvm at least once on an exact version, or set HNVM_NODE to an exact version."
+        exit 1
+      fi
+      node_bootstrap_attempted=true
+
       node_ver="${node_ver:-${HNVM_NODE:-latest}}"
-      resolve_ver "node" "${node_ver}"
-      node_ver="${resolve_ver_result}"
+      # download_node requires an exact version. If node_ver is a tag/range we resolve it first, but
+      # that resolution needs node too. Only recurse into resolve_ver when we already have a node to
+      # run it with; otherwise (registry unreachable, no local node) fail cleanly rather than loop.
+      if is_invalid_version "${node_ver}"; then
+        resolve_ver "node" "${node_ver}"
+        node_ver="${resolve_ver_result}"
+      fi
+      if is_invalid_version "${node_ver}"; then
+        red "Unable to resolve node version '${node_ver}' to bootstrap version resolution. Set HNVM_NODE to an exact version, or use hnvm once while the registry is reachable."
+        exit 1
+      fi
       export node_path="${HNVM_PATH}/node/${node_ver}"
       export node_bin="${node_path}/bin/node"
       download_node
