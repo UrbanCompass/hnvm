@@ -1,3 +1,4 @@
 HNVM_NODE=latest
 HNVM_PNPM=latest
 HNVM_YARN=latest
+HNVM_BUN=latest

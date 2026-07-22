@@ -6,8 +6,8 @@ Instead of relying on the version of `node`, `npm`, `pnpm`, etc. each individual
 machine has installed locally, packages use a system we've named HNVM, which stands for Hermetic
 Node Version Manager. Having our `node` binaries be hermetic means each app or package defines what
 version of `node` they depend on. That version is installed and used to run whenever the package
-runs scripts in `node`, `npm`, `pnpm`, and `yarn`. This ensures that everyone's systems output
-consistent packages, and upgrades required by one package don't affect another.
+runs scripts in `node`, `npm`, `pnpm`, `yarn`, and `bun`. This ensures that everyone's systems
+output consistent packages, and upgrades required by one package don't affect another.
 
 ## Installation
 
@@ -51,14 +51,20 @@ node -v # No longer uses hnvm node script
 Note that `hnvm` depends on [`jq`](https://stedolan.github.io/jq/) being available in your global
 `$PATH`. If you don't install hnvm via `brew` or `basher`, you'll have to make sure that `jq` is installed on your own.
 
+Managing `bun` additionally requires `unzip` (bun is distributed as a `.zip` archive). This is
+present by default on macOS and most Linux distributions.
+
 ## Usage
 
-HNVM reads the version of `node`/`pnpm`/`yarn` set in your `package.json` file' `"engines"` field. If
-no version is set, it will default to the current versions set in HNVM's own `package.json`. Unlike
-HNVM 1.0, you don't have to find any particular bash script to run HNVM. Just use the regular
-`node`, `npm`, etc. commands you're used to from anywhere on your computer. If you run it
-next to a `package.json` file, it will read the engines field. If not, it'll default to the global
-version.
+HNVM reads the version of `node`/`pnpm`/`yarn`/`bun` set in your `package.json` file' `"engines"`
+field. If no version is set, it will default to the current versions set in HNVM's own
+`package.json`. Unlike HNVM 1.0, you don't have to find any particular bash script to run HNVM. Just
+use the regular `node`, `npm`, `bun`, etc. commands you're used to from anywhere on your computer. If
+you run it next to a `package.json` file, it will read the engines field. If not, it'll default to
+the global version.
+
+Because `bun` is a standalone native binary, `bun` and `bunx` do not require a hermetic `node` to be
+installed — they run directly.
 
 ```js
 // main.js
@@ -87,6 +93,7 @@ HNVM_PATH=/path/to/.hnvm
 HNVM_NODE=10.0.0
 HNVM_PNPM=3.0.0
 HNVM_YARN=1.19.0
+HNVM_BUN=1.3.14
 ```
 
 The full list of config options are detailed below.
@@ -100,7 +107,8 @@ Versions configured in `package.json` files go in either the `"engines"` field o
   "engines": {
     "node": "10.0.0",
     "pnpm": "3.0.0",
-    "yarn": "1.19.0"
+    "yarn": "1.19.0",
+    "bun": "1.3.14"
   },
   "hnvm": {
     "node": "11.0.0" // This overrules any versions set in "engines"
@@ -131,9 +139,9 @@ node version range, but HNVM itself runs at a specific version:
 Location on disk to download binaries to, defaulting to an `.hnvm` directory in your `$HOME`
 directory.
 
-### `HNVM_NODE`, `HNVM_PNPM`, `HNVM_YARN` (Defaults to `latest`)
+### `HNVM_NODE`, `HNVM_PNPM`, `HNVM_YARN`, `HNVM_BUN` (Defaults to `latest`)
 
-Version of `node`/`pnpm`/`yarn` to use. If semver ranges are provided instead of exact versions
+Version of `node`/`pnpm`/`yarn`/`bun` to use. If semver ranges are provided instead of exact versions
 (e.g. the defaults are set to `latest`), HNVM will perform curl requests to resolve those to an
 exact version. However you'll get a warning about this since it could slow down execution time from
 the async request, or it might even fail to work at all if the curl requests fail to load.
@@ -188,6 +196,21 @@ custom destination, you should ensure the layout mirrors that of `yarnpkg.com`:
 ```
 /${yarn_ver}/yarn-v${yarn_ver}.tar.gz
 ```
+
+### `HNVM_BUN_DIST` (Defaults to `https://github.com/oven-sh/bun/releases/download`)
+
+Location from where to download `bun` from. When providing a custom destination, you should ensure
+the layout mirrors that of bun's GitHub releases:
+```
+/bun-v${bun_ver}/bun-${platform}-${cpu_arch}.zip
+```
+where `platform` is `darwin`/`linux` and `cpu_arch` is `x64`/`aarch64`.
+
+### `HNVM_BUN_VARIANT` (Defaults to '')
+
+Variant of the bun distribution files to fetch. Set to `baseline` for CPUs without AVX2 support, or
+`musl` for musl-based Linux distributions (e.g. Alpine). This is appended to the download filename
+(e.g. `bun-linux-x64-musl.zip`).
 
 
 ### `HNVM_NOFALLBACK` (Defaults to `false`)
