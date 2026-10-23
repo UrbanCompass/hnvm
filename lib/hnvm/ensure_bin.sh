@@ -132,6 +132,7 @@ function distrust_node_certs() {
   local marker_file="${node_path}/.hnvm-distrusted-certs"
   local marker
   local lock_dir="${node_path}/.hnvm-distrust-lock"
+  local lock_retries=0
   local tmp_bin=
 
   # This runs on every invocation, so the up-to-date check only uses bash builtins (no subprocesses).
@@ -157,8 +158,12 @@ function distrust_node_certs() {
   # than 2 minutes was left behind by a killed process.
   until mkdir "${lock_dir}" 2>/dev/null; do
     if [[ ! -d "${lock_dir}" ]]; then
-      distrust_certs_failed "could not create ${lock_dir}"
-      return 0
+      # Usually the lock was just released, so try again right away. Only give up if it can't be created.
+      if [[ ! -w "${node_path}" ]] || (( ++lock_retries > 20 )); then
+        distrust_certs_failed "could not create ${lock_dir}"
+        return 0
+      fi
+      continue
     fi
     if [[ -n "$(find "${lock_dir}" -maxdepth 0 -mmin +2 2>/dev/null)" ]]; then
       rmdir "${lock_dir}" 2>/dev/null || true
