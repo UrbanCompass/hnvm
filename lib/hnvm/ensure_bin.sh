@@ -185,7 +185,8 @@ function distrust_node_certs() {
 # Called by distrust_node_certs, which holds the lock and sets up its locals
 function patch_node_certs() {
   local result
-  local removed
+  local line
+  local removed=
   local pem_blocks
   local root_count
 
@@ -202,8 +203,20 @@ function patch_node_certs() {
     return 0
   fi
 
-  # Only the last line is the result; anything before it is stderr noise (e.g. node warnings)
-  read -r removed pem_blocks root_count <<< "$(echo "${result}" | tail -n 1)"
+  # The output can include stderr noise (e.g. node warnings) before or after the result line. Without
+  # a well-formed result line nothing is known to be patched, so fail rather than record it as done.
+  while IFS= read -r line; do
+    if [[ "${line}" =~ ^hnvm-distrust-result\ ([0-9]+)\ ([0-9]+)\ (-?[0-9]+)$ ]]; then
+      removed="${BASH_REMATCH[1]}"
+      pem_blocks="${BASH_REMATCH[2]}"
+      root_count="${BASH_REMATCH[3]}"
+    fi
+  done <<< "${result}"
+
+  if [[ -z "${removed}" ]]; then
+    distrust_certs_failed "unexpected output from distrust-certs.js: ${result:-(none)}"
+    return 0
+  fi
 
   if [[ "${removed}" -gt 0 ]]; then
     if [[ "${OSTYPE}" == "darwin"* ]] &&

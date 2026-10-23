@@ -95,6 +95,21 @@ describe('removing distrusted root certificates from node', () => {
     })
   })
 
+  it('does not record the roots as removed when the patch result is missing', () => {
+    // Swallows everything node writes to stdout, including distrust-certs.js's result line
+    const silenceStdout = path.join(context.testDir, 'silence-stdout.js')
+    fs.writeFileSync(silenceStdout, 'process.stdout.write = () => true\n')
+
+    const result = context.execFileSyncSeparateStreams(context.binaries.node, ['-e', '0'], {
+      NODE_OPTIONS: `--require ${silenceStdout}`,
+    })
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toContain(`node v${VERSION} still trusts distrusted root certificates: unexpected output`)
+    expect(fs.existsSync(markerFile)).toBe(false)
+    expect(rootFingerprints({HNVM_DISTRUST_CERTS: 'false'}).fingerprints).toContain(EMSIGN_ECC_G3)
+  })
+
   it('removes the distrusted roots from an already installed node by default', () => {
     const before = rootFingerprints({HNVM_DISTRUST_CERTS: 'false'}).fingerprints
     const {fingerprints, stderr} = rootFingerprints()
