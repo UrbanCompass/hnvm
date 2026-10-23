@@ -71,7 +71,7 @@ function createTestContext() {
       testStdoutServer.close()
       fs.rmSync(testDir, {recursive: true, force: true})
     },
-    execFileSync(file, args) {
+    execFileSync(file, args, extraEnv = {}) {
       const outputFile = path.join(testDir, 'stdout')
       fs.writeFileSync(outputFile, '')
 
@@ -79,7 +79,7 @@ function createTestContext() {
       // this default PATH may have issues finding `jq`, which will break the test when it runs source code
       const stdout = childProcess.execFileSync(file, args, {
         encoding: 'utf-8',
-        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: outputFile, PATH: process.env.PATH},
+        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: outputFile, PATH: process.env.PATH, ...extraEnv},
         cwd: cwdDir,
       })
 
@@ -98,11 +98,11 @@ function createTestContext() {
 
       return hnvmProcess;
     },
-    execFileSyncSeparateStreams(file, args) {
+    execFileSyncSeparateStreams(file, args, extraEnv = {}) {
       // Execute without HNVM_OUTPUT_DESTINATION so we can test default stderr behavior
       const hnvmProcess = childProcess.spawnSync(file, args, {
         encoding: 'utf-8',
-        env: {HNVM_PATH: hnvmDir, PATH: process.env.PATH},
+        env: {HNVM_PATH: hnvmDir, PATH: process.env.PATH, ...extraEnv},
         cwd: cwdDir,
       });
 

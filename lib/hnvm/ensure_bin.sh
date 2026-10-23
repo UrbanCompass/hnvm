@@ -108,6 +108,74 @@ function download_node() {
   fi
 }
 
+function distrust_certs_failed() {
+  rm -f "${node_bin}.hnvm-tmp"
+
+  if [[ "${HNVM_DISTRUST_CERTS_STRICT}" == "true" ]]; then
+    error "Unable to remove distrusted root certificates from node v${node_ver}: $1"
+    error "Set HNVM_DISTRUST_CERTS=false to run this node anyway (it will trust those certificates)."
+    exit 1
+  fi
+
+  # Deliberately not routed through write_to_hnvm_output/HNVM_QUIET: this should always be seen
+  warning "node v${node_ver} still trusts distrusted root certificates: $1"
+}
+
+# Node bundles its root CAs inside the binary, so older versions keep trusting roots that have since
+# been distrusted. Neutralize the ones listed in distrusted-certs.txt (plus HNVM_DISTRUST_CERTS_EXTRA)
+# and record what was removed in a marker file so later invocations skip straight past this.
+function distrust_node_certs() {
+  local fingerprints
+  local marker_file="${node_path}/.hnvm-distrusted-certs"
+  local marker
+  local tmp_bin="${node_bin}.hnvm-tmp"
+  local result
+  local removed
+  local root_count
+
+  # This runs on every invocation, so the up-to-date check only uses bash builtins (no subprocesses).
+  # Bump the "v1" if the patching logic changes in a way that requires re-patching existing installs.
+  marker="v1"$'\n'"$(< "${script_dir}/distrusted-certs.txt")"$'\n'"extra=${HNVM_DISTRUST_CERTS_EXTRA}"
+
+  if [[ -f "${marker_file}" && "$(< "${marker_file}")" == "${marker}" ]]; then
+    return 0
+  fi
+
+  fingerprints="$( { grep -v -E '^[[:space:]]*(#|$)' "${script_dir}/distrusted-certs.txt"; echo "${HNVM_DISTRUST_CERTS_EXTRA}" | tr ',' '\n'; } |
+    tr -d ': \t' | tr '[:upper:]' '[:lower:]' | grep -v '^$' | sort -u | paste -s -d ',' -)"
+
+  if ! result="$("${node_bin}" "${script_dir}/distrust-certs.js" patch "${node_bin}" "${tmp_bin}" \
+    "${script_dir}/distrusted-placeholder.pem" "${fingerprints}" 2>&1)"; then
+    distrust_certs_failed "${result}"
+    return 0
+  fi
+
+  # Only the last line is the result; anything before it is stderr noise (e.g. node warnings)
+  read -r removed root_count <<< "$(echo "${result}" | tail -n 1)"
+
+  if [[ "${removed}" -gt 0 ]]; then
+    if [[ "${OSTYPE}" == "darwin"* ]] &&
+      ! result="$(codesign --force --sign - --preserve-metadata=entitlements "${tmp_bin}" 2>&1)"; then
+      distrust_certs_failed "re-signing failed: ${result}"
+      return 0
+    fi
+
+    if ! result="$("${tmp_bin}" "${script_dir}/distrust-certs.js" verify "${fingerprints}" "${root_count}" 2>&1)"; then
+      distrust_certs_failed "the patched binary failed verification: ${result}"
+      return 0
+    fi
+
+    if ! mv -f "${tmp_bin}" "${node_bin}"; then
+      distrust_certs_failed "could not replace ${node_bin}"
+      return 0
+    fi
+
+    blue "Removed ${removed} distrusted root certificate(s) from node v${node_ver}" | write_to_hnvm_output
+  fi
+
+  { echo "${marker}" > "${marker_file}"; } 2>/dev/null || true
+}
+
 function download_pnpm() {
   rm -rf "${pnpm_path}"
   mkdir -p "${pnpm_path}"
@@ -219,6 +287,11 @@ fi
 # bun does not run through node, so skip the node download for bun invocations.
 if [[ "${is_bun}" != "true" ]] && [[ ! -x "${node_bin}" ]]; then
   download_node
+fi
+
+# Runs before the pnpm/yarn downloads below, since the pnpm installer makes HTTPS requests with node
+if [[ "${is_bun}" != "true" && "${HNVM_DISTRUST_CERTS}" != "false" ]]; then
+  distrust_node_certs
 fi
 
 if [[ "${0}" == *pnpm || "${0}" == *pnpx ]] && [[ ! -f "${pnpm_bin}" || "$("${node_bin}" "${pnpm_bin}" -v)" != "${pnpm_ver}" ]]; then

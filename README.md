@@ -246,6 +246,44 @@ Variant of the bun distribution files to fetch. Set to `baseline` for CPUs witho
 `musl` for musl-based Linux distributions (e.g. Alpine). This is appended to the download filename
 (e.g. `bun-linux-x64-musl.zip`).
 
+### `HNVM_DISTRUST_CERTS` (Defaults to `true`)
+
+Node bundles its trusted root certificates inside the `node` binary, so an old Node version keeps
+trusting a root CA even after that CA has been compromised. Projects can pin old versions
+indefinitely. To keep them safe, HNVM removes known-distrusted roots from every Node binary it
+manages. The list lives in [`lib/hnvm/distrusted-certs.txt`](lib/hnvm/distrusted-certs.txt) and
+currently covers the
+[eMudhra CA compromise](https://emudhra.we-have-a-problem.com) (`emSign ECC Root CA - G3` and
+`AAA Certificate Services`).
+
+HNVM patches a binary the first time that version is used, both for new downloads and for versions
+already in `HNVM_PATH`. Each removed root is overwritten in place with an expired placeholder
+certificate. On macOS the binary is then re-signed ad hoc, keeping its entitlements. Before HNVM
+swaps the patched binary in, it checks that the binary runs and no longer trusts the removed roots.
+The result is recorded in `${HNVM_PATH}/node/<version>/.hnvm-distrusted-certs` so later runs skip
+the check.
+
+This applies to `node`, `npm`, `npx`, `pnpm` and `yarn`, which all run through the patched node.
+It does not apply to `bun`. It also does not touch the OS certificate store, which Node reads
+instead when run with `--use-system-ca`/`--use-openssl-ca`, or which you may point
+`NODE_EXTRA_CA_CERTS` at.
+
+Set to `false` to opt out. Patching is one-way: turning it off later does not restore a patched
+binary. To get the original back, delete `${HNVM_PATH}/node/<version>` and HNVM re-downloads it.
+
+### `HNVM_DISTRUST_CERTS_EXTRA` (Defaults to '')
+
+Comma-separated SHA-256 fingerprints of additional root certificates to remove, on top of the
+built-in list. Colons and case don't matter, so the output of
+`openssl x509 -noout -fingerprint -sha256` works as-is. Changing this list re-patches each node
+version the next time it's used.
+
+### `HNVM_DISTRUST_CERTS_STRICT` (Defaults to `false`)
+
+If HNVM can't remove the distrusted roots from a node binary (for example the binary can't be
+written, re-signing fails, or the patched binary fails verification), by default it prints a warning,
+keeps the original binary and runs it anyway. It tries again on the next run. Set to `true` to
+refuse to run instead.
 
 ### `HNVM_NOFALLBACK` (Defaults to `false`)
 
