@@ -274,9 +274,10 @@ binary. To get the original back, delete `${HNVM_PATH}/node/<version>` and HNVM 
 ### `HNVM_DISTRUST_CERTS_EXTRA` (Defaults to '')
 
 Comma-separated SHA-256 fingerprints of additional root certificates to remove, on top of the
-built-in list. Colons and case don't matter, so the output of
-`openssl x509 -noout -fingerprint -sha256` works as-is. Changing this list re-patches each node
-version the next time it's used.
+built-in list. Colons, case and a leading `sha256 Fingerprint=` label don't matter, so the output
+of `openssl x509 -noout -fingerprint -sha256` works as-is. Anything that isn't a SHA-256
+fingerprint after that is rejected (a warning, or an error with `HNVM_DISTRUST_CERTS_STRICT=true`).
+Changing this list re-patches each node version the next time it's used.
 
 ### `HNVM_DISTRUST_CERTS_STRICT` (Defaults to `false`)
 

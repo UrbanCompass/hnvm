@@ -109,7 +109,9 @@ function download_node() {
 }
 
 function distrust_certs_failed() {
-  rm -f "${node_bin}.hnvm-tmp"
+  if [[ -n "${tmp_bin}" ]]; then
+    rm -f "${tmp_bin}"
+  fi
 
   if [[ "${HNVM_DISTRUST_CERTS_STRICT}" == "true" ]]; then
     error "Unable to remove distrusted root certificates from node v${node_ver}: $1"
@@ -126,12 +128,11 @@ function distrust_certs_failed() {
 # and record what was removed in a marker file so later invocations skip straight past this.
 function distrust_node_certs() {
   local fingerprints
+  local invalid
   local marker_file="${node_path}/.hnvm-distrusted-certs"
   local marker
-  local tmp_bin="${node_bin}.hnvm-tmp"
-  local result
-  local removed
-  local root_count
+  local lock_dir="${node_path}/.hnvm-distrust-lock"
+  local tmp_bin=
 
   # This runs on every invocation, so the up-to-date check only uses bash builtins (no subprocesses).
   # Bump the "v1" if the patching logic changes in a way that requires re-patching existing installs.
@@ -141,8 +142,54 @@ function distrust_node_certs() {
     return 0
   fi
 
+  # Accepts the output of `openssl x509 -noout -fingerprint -sha256` as-is: drops the
+  # "sha256 Fingerprint=" label, colons, whitespace and case
   fingerprints="$( { grep -v -E '^[[:space:]]*(#|$)' "${script_dir}/distrusted-certs.txt"; echo "${HNVM_DISTRUST_CERTS_EXTRA}" | tr ',' '\n'; } |
-    tr -d ': \t' | tr '[:upper:]' '[:lower:]' | grep -v '^$' | sort -u | paste -s -d ',' -)"
+    sed 's/.*=//' | tr -d ': \t' | tr '[:upper:]' '[:lower:]' | grep -v '^$' | sort -u | paste -s -d ',' -)"
+  invalid="$(echo "${fingerprints}" | tr ',' '\n' | grep -v -E '^[0-9a-f]{64}$' | paste -s -d ',' - || true)"
+  if [[ -n "${invalid}" ]]; then
+    distrust_certs_failed "invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA: ${invalid}"
+    return 0
+  fi
+
+  # Only one hnvm invocation patches a given node version at a time; the rest wait for it and then
+  # find the marker up to date. mkdir is atomic and, unlike flock, available on macOS. A lock older
+  # than 2 minutes was left behind by a killed process.
+  until mkdir "${lock_dir}" 2>/dev/null; do
+    if [[ ! -d "${lock_dir}" ]]; then
+      distrust_certs_failed "could not create ${lock_dir}"
+      return 0
+    fi
+    if [[ -n "$(find "${lock_dir}" -maxdepth 0 -mmin +2 2>/dev/null)" ]]; then
+      rmdir "${lock_dir}" 2>/dev/null || true
+    fi
+    sleep 0.2
+  done
+  # Releases the lock if anything below exits (e.g. strict mode). Expanded now, the locals are gone by then.
+  # shellcheck disable=SC2064
+  trap "rmdir $(printf '%q' "${lock_dir}") 2>/dev/null || true" EXIT
+
+  if [[ ! -f "${marker_file}" || "$(< "${marker_file}")" != "${marker}" ]]; then
+    patch_node_certs
+  fi
+
+  rmdir "${lock_dir}" 2>/dev/null || true
+  trap - EXIT
+}
+
+# Called by distrust_node_certs, which holds the lock and sets up its locals
+function patch_node_certs() {
+  local result
+  local removed
+  local pem_blocks
+  local root_count
+
+  if ! tmp_bin="$(mktemp "${node_bin}.hnvm-tmp.XXXXXX" 2>&1)"; then
+    result="${tmp_bin}"
+    tmp_bin=
+    distrust_certs_failed "could not create a temporary file next to ${node_bin}: ${result}"
+    return 0
+  fi
 
   if ! result="$("${node_bin}" "${script_dir}/distrust-certs.js" patch "${node_bin}" "${tmp_bin}" \
     "${script_dir}/distrusted-placeholder.pem" "${fingerprints}" 2>&1)"; then
@@ -151,7 +198,7 @@ function distrust_node_certs() {
   fi
 
   # Only the last line is the result; anything before it is stderr noise (e.g. node warnings)
-  read -r removed root_count <<< "$(echo "${result}" | tail -n 1)"
+  read -r removed pem_blocks root_count <<< "$(echo "${result}" | tail -n 1)"
 
   if [[ "${removed}" -gt 0 ]]; then
     if [[ "${OSTYPE}" == "darwin"* ]] &&
@@ -160,7 +207,7 @@ function distrust_node_certs() {
       return 0
     fi
 
-    if ! result="$("${tmp_bin}" "${script_dir}/distrust-certs.js" verify "${fingerprints}" "${root_count}" 2>&1)"; then
+    if ! result="$("${tmp_bin}" "${script_dir}/distrust-certs.js" verify "${fingerprints}" "${pem_blocks}" "${root_count}" 2>&1)"; then
       distrust_certs_failed "the patched binary failed verification: ${result}"
       return 0
     fi
@@ -171,6 +218,8 @@ function distrust_node_certs() {
     fi
 
     blue "Removed ${removed} distrusted root certificate(s) from node v${node_ver}" | write_to_hnvm_output
+  else
+    rm -f "${tmp_bin}"
   fi
 
   { echo "${marker}" > "${marker_file}"; } 2>/dev/null || true
