@@ -168,6 +168,23 @@ new version is being downloaded so that you know exactly what's going on. If you
 output, set the `HNVM_QUIET` environment variable to `true` to have this output redirected to
 `/dev/null`.
 
+### `HNVM_MIN_SAFE_NODE` (Defaults to `true`)
+
+After the Node version is resolved, hnvm checks it against the rules in `lib/hnvm/min-safe-node.txt`. A
+Node release that is below the fixed release for its own major line (for example 22.1.0, when 22.23.4 fixes
+CVE-2026-111497) is replaced by that fixed release, with a warning that names both versions. The pin in your
+`package.json` or `.hnvmrc` is not edited. Set `HNVM_MIN_SAFE_NODE=false` to run exactly the version you pinned.
+Majors newer than the highest rule are never changed.
+
+The warning is not hidden by `HNVM_QUIET`. It does follow `HNVM_OUTPUT_DESTINATION`.
+
+### `HNVM_MIN_SAFE_NODE_MAJOR` (Defaults to `false`)
+
+Some pinned lines have no fix at all (23, 25, and anything below 22). By default hnvm only warns about those and
+runs the pinned version, because moving to another major can break native add-ons. Set
+`HNVM_MIN_SAFE_NODE_MAJOR=true` to have hnvm run the fixed release named in `min-safe-node.txt` instead (24.22.1,
+or 26.12.1 for 25). The next security incident only needs a new line in that file.
+
 ### `HNVM_NODE_DIST` (Defaults to `https://nodejs.org/dist`)
 
 Location of the NodeJS distribution files. If you provide a custom destination, you should ensure
