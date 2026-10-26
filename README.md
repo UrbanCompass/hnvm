@@ -185,6 +185,23 @@ runs the pinned version, because moving to another major can break native add-on
 `HNVM_MIN_SAFE_NODE_MAJOR=true` to have hnvm run the fixed release named in `min-safe-node.txt` instead (24.22.1,
 or 26.12.1 for 25). The next security incident only needs a new line in that file.
 
+### Managed (MDM) settings for the two keys above
+
+`HNVM_MIN_SAFE_NODE` and `HNVM_MIN_SAFE_NODE_MAJOR` can also be set by an MDM configuration profile, which wins over the
+environment and every `.hnvmrc`, and which a user cannot edit. Deploy a Custom Settings payload for the preference domain
+`com.compass.hnvm`, with the keys as booleans:
+
+```xml
+<key>HNVM_MIN_SAFE_NODE</key><true/>
+<key>HNVM_MIN_SAFE_NODE_MAJOR</key><true/>
+```
+
+macOS writes the profile to `/Library/Managed Preferences/com.compass.hnvm.plist`, and hnvm reads it with `defaults`.
+A key that is not in the profile falls back to the environment, then `.hnvmrc`, then the default. Only these two keys are
+read from there for now. Values of `true`, `1` and `yes` (or `false`, `0` and `no`), in any case, are accepted; anything else
+is ignored. This only applies on macOS. To check what a Mac has, run
+`defaults read "/Library/Managed Preferences/com.compass.hnvm"`.
+
 ### `HNVM_NODE_DIST` (Defaults to `https://nodejs.org/dist`)
 
 Location of the NodeJS distribution files. If you provide a custom destination, you should ensure

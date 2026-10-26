@@ -33,6 +33,22 @@ function security_warning() {
   fi
 }
 
+# Managed (MDM) preferences: a configuration profile for the com.compass.hnvm domain is written to /Library/Managed Preferences,
+# which only an administrator can change. For the two keys below, a managed value wins over the environment and every .hnvmrc.
+# This is a plain assignment (not an overridable default) so that no environment variable can point it somewhere else.
+managed_prefs_plist="/Library/Managed Preferences/com.compass.hnvm"
+
+# Prints the managed value of key $1 as true or false. Prints nothing when it is not set, is not a boolean, or this is not macOS.
+function managed_pref() {
+  local raw
+  [[ -x /usr/bin/defaults ]] || return 0
+  raw="$(/usr/bin/defaults read "${managed_prefs_plist}" "$1" 2>/dev/null)" || return 0
+  case "$(echo "${raw}" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes) echo true ;;
+    0|false|no) echo false ;;
+  esac
+}
+
 function apply_min_safe_node() {
   # shellcheck disable=SC2154 # script_dir is set by config.sh
   local rules_file="${script_dir}/min-safe-node.txt"
@@ -55,15 +71,29 @@ function apply_min_safe_node() {
 
   # No rule (a newer line than any rule here), or already at or above the safe version
   [[ -n "${safe}" ]] || return 0
+  # Settings are read only once a version needs action, so the common case costs nothing. A managed value wins.
+  local setting managed
   if [[ "${safe%%.*}" == "${major}" ]]; then
     version_lt "${pinned}" "${safe}" || return 0
-    [[ "${HNVM_MIN_SAFE_NODE:-true}" == "false" ]] && return 0
-    security_warning "node ${pinned} has known security problems; using ${safe} instead. Set HNVM_MIN_SAFE_NODE=false to opt out."
+    setting="${HNVM_MIN_SAFE_NODE:-true}"
+    managed="$(managed_pref HNVM_MIN_SAFE_NODE)"
+    [[ -n "${managed}" ]] && setting="${managed}"
+    [[ "${setting}" == "false" ]] && return 0
+    if [[ -n "${managed}" ]]; then
+      security_warning "node ${pinned} has known security problems; using ${safe} instead (set by your organization)."
+    else
+      security_warning "node ${pinned} has known security problems; using ${safe} instead. Set HNVM_MIN_SAFE_NODE=false to opt out."
+    fi
     node_ver="${safe}"
   else
-    if [[ "${HNVM_MIN_SAFE_NODE_MAJOR:-false}" == "true" ]]; then
+    setting="${HNVM_MIN_SAFE_NODE_MAJOR:-false}"
+    managed="$(managed_pref HNVM_MIN_SAFE_NODE_MAJOR)"
+    [[ -n "${managed}" ]] && setting="${managed}"
+    if [[ "${setting}" == "true" ]]; then
       security_warning "node ${pinned} has known security problems and no fix on its line; using ${safe} instead."
       node_ver="${safe}"
+    elif [[ -n "${managed}" ]]; then
+      security_warning "node ${pinned} has known security problems and no fix on its line. Move to ${safe} or newer."
     else
       security_warning "node ${pinned} has known security problems and no fix on its line. Move to ${safe} or newer, or set HNVM_MIN_SAFE_NODE_MAJOR=true to have hnvm do it."
     fi

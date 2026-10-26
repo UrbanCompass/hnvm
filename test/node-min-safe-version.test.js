@@ -9,15 +9,20 @@ jest.setTimeout(120_000)
 const libDir = path.join(__dirname, '../lib/hnvm')
 
 // Runs apply_min_safe_node in a bash shell for a pinned version, without downloading anything
-function floor(pinned, env = {}) {
+// afterSource is bash run right after the library is sourced. By default it points the managed-preferences file at a
+// path that does not exist, so a developer Mac that has the real MDM profile installed cannot change the results.
+const NO_MANAGED_PREFS = 'managed_prefs_plist=/nonexistent/hnvm-test'
+
+function floor(pinned, env = {}, afterSource = NO_MANAGED_PREFS) {
   const result = childProcess.spawnSync(
     'bash',
     [
       '-c',
-      'set -e; script_dir="$1"; COMMAND_OUTPUT="&2"; source "$script_dir/min-safe-node.sh"; node_ver="$2"; apply_min_safe_node; echo "RESULT=$node_ver"',
+      'set -e; script_dir="$1"; COMMAND_OUTPUT="&2"; source "$script_dir/min-safe-node.sh"; eval "$3"; node_ver="$2"; apply_min_safe_node; echo "RESULT=$node_ver"',
       'bash',
       libDir,
       pinned,
+      afterSource,
     ],
     {encoding: 'utf-8', env: {PATH: process.env.PATH, ...env}},
   )
@@ -127,6 +132,76 @@ describe('minimum safe node version rules', () => {
   })
 })
 
+// A stand-in for managed_pref, so precedence is tested on any platform (CI runs on Linux, where there is no `defaults`)
+const stubManaged = (safe, major) =>
+  `managed_pref() { case "$1" in HNVM_MIN_SAFE_NODE) echo "${safe}" ;; HNVM_MIN_SAFE_NODE_MAJOR) echo "${major}" ;; esac; }`
+
+describe('managed (MDM) settings', () => {
+  it('make a same-line bump happen even when the environment opts out', () => {
+    const result = floor('22.1.0', {HNVM_MIN_SAFE_NODE: 'false'}, stubManaged('true', ''))
+    expect(result.version).toBe('22.23.4')
+    expect(result.stderr).toContain('using 22.23.4 instead (set by your organization)')
+    expect(result.stderr).not.toContain('opt out')
+  })
+
+  it('can turn the same-line bump off, whatever the environment says', () => {
+    const result = floor('22.1.0', {HNVM_MIN_SAFE_NODE: 'true'}, stubManaged('false', ''))
+    expect(result.version).toBe('22.1.0')
+    expect(result.stderr).toBe('')
+  })
+
+  it('move a pin with no fix across majors even when the environment does not ask for it', () => {
+    const result = floor('18.12.0', {}, stubManaged('', 'true'))
+    expect(result.version).toBe('24.22.1')
+  })
+
+  it('can forbid the cross-major move, whatever the environment says', () => {
+    const result = floor('18.12.0', {HNVM_MIN_SAFE_NODE_MAJOR: 'true'}, stubManaged('', 'false'))
+    expect(result.version).toBe('18.12.0')
+    expect(result.stderr).toContain('no fix on its line. Move to 24.22.1 or newer.')
+    expect(result.stderr).not.toContain('HNVM_MIN_SAFE_NODE_MAJOR')
+  })
+
+  it('leave the environment in charge for a key they do not set', () => {
+    const result = floor('18.12.0', {HNVM_MIN_SAFE_NODE_MAJOR: 'true'}, stubManaged('false', ''))
+    expect(result.version).toBe('24.22.1')
+  })
+})
+
+const describeOnMac = process.platform === 'darwin' ? describe : describe.skip
+
+describeOnMac('reading the managed preferences file with defaults', () => {
+  let dir
+  const plist = () => path.join(dir, 'com.compass.hnvm')
+  const write = (key, type, value) => childProcess.execFileSync('/usr/bin/defaults', ['write', plist(), key, type, value])
+  const read = key => {
+    const out = childProcess.spawnSync(
+      'bash',
+      ['-c', 'script_dir="$1"; source "$script_dir/min-safe-node.sh"; managed_prefs_plist="$2"; managed_pref "$3"', 'bash', libDir, plist(), key],
+      {encoding: 'utf-8', env: {PATH: process.env.PATH}},
+    )
+    return out.stdout.trim()
+  }
+
+  beforeAll(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hnvm-managed'))
+    write('HNVM_MIN_SAFE_NODE', '-bool', 'false')
+    write('HNVM_MIN_SAFE_NODE_MAJOR', '-string', 'TRUE')
+    write('SOMETHING_ELSE', '-string', 'maybe')
+  })
+
+  afterAll(() => fs.rmSync(dir, {recursive: true, force: true}))
+
+  it('reads a boolean', () => expect(read('HNVM_MIN_SAFE_NODE')).toBe('false'))
+  it('reads a string, ignoring case', () => expect(read('HNVM_MIN_SAFE_NODE_MAJOR')).toBe('true'))
+  it('prints nothing for a value that is not a boolean', () => expect(read('SOMETHING_ELSE')).toBe(''))
+  it('prints nothing for a key that is not set', () => expect(read('NOT_THERE')).toBe(''))
+  it('prints nothing when the file does not exist', () => {
+    fs.rmSync(plist() + '.plist')
+    expect(read('HNVM_MIN_SAFE_NODE')).toBe('')
+  })
+})
+
 describe('node pinned below a fixed release', () => {
   let context
 
@@ -146,7 +221,10 @@ describe('node pinned below a fixed release', () => {
     expect(fs.readdirSync(context.hnvmDir + '/node')).toEqual(['22.23.4'])
   })
 
-  it('runs the pinned version when opted out through .hnvmrc', () => {
+  // On a Mac with the real com.compass.hnvm profile installed, the managed value wins over .hnvmrc, so this cannot pass there
+  const itWithoutMdm = fs.existsSync('/Library/Managed Preferences/com.compass.hnvm.plist') ? it.skip : it
+
+  itWithoutMdm('runs the pinned version when opted out through .hnvmrc', () => {
     fs.writeFileSync(path.join(context.cwdDir, '.hnvmrc'), 'HNVM_MIN_SAFE_NODE=false\n')
     const result = context.execFileSync(context.binaries.node, ['--version'])
     expect(result).toContain('v22.1.0')
