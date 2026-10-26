@@ -1,9 +1,9 @@
-const { createTestContext } = require("./utils.js");
+const { createTestContext, describeUnlessManaged } = require("./utils.js");
 const path = require("path");
 
 jest.setTimeout(60_000);
 
-describe("node stderr output behavior", () => {
+describeUnlessManaged("node stderr output behavior", () => {
   let context;
 
   beforeAll(() => {

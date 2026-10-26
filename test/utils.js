@@ -111,4 +111,9 @@ function createTestContext() {
   }
 }
 
-module.exports = {createTestContext}
+// A Mac with the com.compass.hnvm MDM profile applies it on top of every .hnvmrc and package.json (that is its job), so a test
+// that pins an old Node cannot get the version it asks for there. Those suites are skipped on such a Mac.
+const hasManagedProfile = fs.existsSync('/Library/Managed Preferences/com.compass.hnvm.plist')
+const describeUnlessManaged = hasManagedProfile ? describe.skip : describe
+
+module.exports = {createTestContext, hasManagedProfile, describeUnlessManaged}

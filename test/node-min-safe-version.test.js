@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const childProcess = require('child_process')
-const {createTestContext} = require('./utils.js')
+const {createTestContext, describeUnlessManaged} = require('./utils.js')
 
 jest.setTimeout(120_000)
 
@@ -93,7 +93,7 @@ describe('minimum safe node version rules', () => {
   it('ignores HNVM_QUIET, so a security notice is never hidden', () => {
     const result = childProcess.spawnSync(
       'bash',
-      ['-c', 'script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; node_ver=22.1.0; apply_min_safe_node', 'bash', libDir],
+      ['-c', 'script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; ' + NO_MANAGED_PREFS + '; node_ver=22.1.0; apply_min_safe_node', 'bash', libDir],
       {encoding: 'utf-8', env: {PATH: process.env.PATH}},
     )
     expect(result.stderr).toContain('using 22.23.4 instead')
@@ -104,7 +104,7 @@ describe('minimum safe node version rules', () => {
     fs.writeFileSync(dest, '')
     const result = childProcess.spawnSync(
       'bash',
-      ['-c', 'script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; node_ver=22.1.0; apply_min_safe_node', 'bash', libDir],
+      ['-c', 'script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; ' + NO_MANAGED_PREFS + '; node_ver=22.1.0; apply_min_safe_node', 'bash', libDir],
       {encoding: 'utf-8', env: {PATH: process.env.PATH, HNVM_OUTPUT_DESTINATION: dest, HNVM_QUIET: 'true'}},
     )
     const written = fs.readFileSync(dest, 'utf-8')
@@ -116,7 +116,7 @@ describe('minimum safe node version rules', () => {
   it('does not stop hnvm when the warning cannot be written (stderr closed)', () => {
     const result = childProcess.spawnSync(
       'bash',
-      ['-c', 'set -e; script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; node_ver=22.1.0; exec 2>&-; apply_min_safe_node; echo "RESULT=$node_ver"', 'bash', libDir],
+      ['-c', 'set -e; script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; ' + NO_MANAGED_PREFS + '; node_ver=22.1.0; exec 2>&-; apply_min_safe_node; echo "RESULT=$node_ver"', 'bash', libDir],
       {encoding: 'utf-8', env: {PATH: process.env.PATH}},
     )
     expect(result.status).toBe(0)
@@ -202,7 +202,7 @@ describeOnMac('reading the managed preferences file with defaults', () => {
   })
 })
 
-describe('node pinned below a fixed release', () => {
+describeUnlessManaged('node pinned below a fixed release', () => {
   let context
 
   beforeAll(() => {
@@ -221,10 +221,7 @@ describe('node pinned below a fixed release', () => {
     expect(fs.readdirSync(context.hnvmDir + '/node')).toEqual(['22.23.4'])
   })
 
-  // On a Mac with the real com.compass.hnvm profile installed, the managed value wins over .hnvmrc, so this cannot pass there
-  const itWithoutMdm = fs.existsSync('/Library/Managed Preferences/com.compass.hnvm.plist') ? it.skip : it
-
-  itWithoutMdm('runs the pinned version when opted out through .hnvmrc', () => {
+  it('runs the pinned version when opted out through .hnvmrc', () => {
     fs.writeFileSync(path.join(context.cwdDir, '.hnvmrc'), 'HNVM_MIN_SAFE_NODE=false\n')
     const result = context.execFileSync(context.binaries.node, ['--version'])
     expect(result).toContain('v22.1.0')

@@ -1,11 +1,11 @@
 const fs = require('fs')
 const path = require('path')
 const childProcess = require('child_process')
-const {createTestContext} = require('./utils.js')
+const {createTestContext, describeUnlessManaged} = require('./utils.js')
 
 jest.setTimeout(60_000)
 
-describe('node with a variant', () => {
+describeUnlessManaged('node with a variant', () => {
   const VERSION = '16.13.0'
   let context
 
