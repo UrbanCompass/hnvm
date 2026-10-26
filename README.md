@@ -176,7 +176,7 @@ CVE-2026-111497) is replaced by that fixed release, with a warning that names bo
 `package.json` or `.hnvmrc` is not edited. Set `HNVM_MIN_SAFE_NODE=false` to run exactly the version you pinned.
 Majors newer than the highest rule are never changed.
 
-The warning is not hidden by `HNVM_QUIET`. It does follow `HNVM_OUTPUT_DESTINATION`.
+The warning is not hidden by `HNVM_QUIET`. It does follow `HNVM_OUTPUT_DESTINATION`, and a failed write (for example, a closed stderr) never stops hnvm from running node.
 
 ### `HNVM_MIN_SAFE_NODE_MAJOR` (Defaults to `false`)
 

@@ -20,14 +20,16 @@ function version_lt() {
   return 1
 }
 
-# Security notices are not hidden by HNVM_QUIET, but they do follow HNVM_OUTPUT_DESTINATION when one is set
+# Security notices are not hidden by HNVM_QUIET (which points COMMAND_OUTPUT at /dev/null), but they do follow
+# HNVM_OUTPUT_DESTINATION when one is set. A failed write (stderr closed, a full disk) never stops hnvm from running node.
 function security_warning() {
-  local message
+  local message dest="${HNVM_OUTPUT_DESTINATION:-}"
   message=$'\e[33mWarning\e[0m: '"$1"
-  if [[ "${COMMAND_OUTPUT}" == "&2" || "${COMMAND_OUTPUT}" == "/dev/null" ]]; then
-    echo -e "${message}" >&2
+  if [[ -n "${dest}" && ! -S "${dest}" ]]; then
+    { echo -e "${message}" >> "${dest}"; } 2>/dev/null || true
   else
-    echo -e "${message}" >> "${COMMAND_OUTPUT}"
+    # ">&2" first, so the message goes to the real stderr; only the command's own error output is discarded
+    echo -e "${message}" >&2 2>/dev/null || true
   fi
 }
 

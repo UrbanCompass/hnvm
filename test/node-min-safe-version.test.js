@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const os = require('os')
 const childProcess = require('child_process')
 const {createTestContext} = require('./utils.js')
 
@@ -13,7 +14,7 @@ function floor(pinned, env = {}) {
     'bash',
     [
       '-c',
-      'script_dir="$1"; COMMAND_OUTPUT="&2"; source "$script_dir/min-safe-node.sh"; node_ver="$2"; apply_min_safe_node; echo "RESULT=$node_ver"',
+      'set -e; script_dir="$1"; COMMAND_OUTPUT="&2"; source "$script_dir/min-safe-node.sh"; node_ver="$2"; apply_min_safe_node; echo "RESULT=$node_ver"',
       'bash',
       libDir,
       pinned,
@@ -91,6 +92,30 @@ describe('minimum safe node version rules', () => {
       {encoding: 'utf-8', env: {PATH: process.env.PATH}},
     )
     expect(result.stderr).toContain('using 22.23.4 instead')
+  })
+
+  it('still follows HNVM_OUTPUT_DESTINATION when HNVM_QUIET has pointed COMMAND_OUTPUT at /dev/null', () => {
+    const dest = path.join(os.tmpdir(), `hnvm-warning-${process.pid}`)
+    fs.writeFileSync(dest, '')
+    const result = childProcess.spawnSync(
+      'bash',
+      ['-c', 'script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; node_ver=22.1.0; apply_min_safe_node', 'bash', libDir],
+      {encoding: 'utf-8', env: {PATH: process.env.PATH, HNVM_OUTPUT_DESTINATION: dest, HNVM_QUIET: 'true'}},
+    )
+    const written = fs.readFileSync(dest, 'utf-8')
+    fs.rmSync(dest)
+    expect(written).toContain('using 22.23.4 instead')
+    expect(result.stderr).toBe('')
+  })
+
+  it('does not stop hnvm when the warning cannot be written (stderr closed)', () => {
+    const result = childProcess.spawnSync(
+      'bash',
+      ['-c', 'set -e; script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; node_ver=22.1.0; exec 2>&-; apply_min_safe_node; echo "RESULT=$node_ver"', 'bash', libDir],
+      {encoding: 'utf-8', env: {PATH: process.env.PATH}},
+    )
+    expect(result.status).toBe(0)
+    expect(result.stdout).toContain('RESULT=22.23.4')
   })
 
   it('has rules for every line of a fixed release', () => {
