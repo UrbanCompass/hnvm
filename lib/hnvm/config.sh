@@ -192,6 +192,9 @@ if [[ -z "${node_ver}" && "${is_bun}" != "true" ]]; then
   exit 1
 fi
 
+# shellcheck source=/dev/null
+source "${script_dir}/min-safe-node.sh"
+
 function is_invalid_version() {
   [[ ! "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 }
@@ -319,6 +322,7 @@ EOF
 if [[ "${is_bun}" != "true" ]]; then
   resolve_ver "node" "${node_ver}"
   node_ver=${resolve_ver_result}
+  apply_min_safe_node
 fi
 
 if [[ "${0}" == *pnpm || "${0}" == *pnpx ]]; then

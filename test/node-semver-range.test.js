@@ -1,9 +1,9 @@
 const fs = require('fs')
-const {createTestContext} = require('./utils.js')
+const {createTestContext, describeUnlessManaged} = require('./utils.js')
 
 jest.setTimeout(60_000)
 
-describe('node with a semver range', () => {
+describeUnlessManaged('node with a semver range', () => {
   let context
 
   beforeAll(() => {

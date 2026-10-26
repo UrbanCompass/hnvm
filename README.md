@@ -168,6 +168,40 @@ new version is being downloaded so that you know exactly what's going on. If you
 output, set the `HNVM_QUIET` environment variable to `true` to have this output redirected to
 `/dev/null`.
 
+### `HNVM_MIN_SAFE_NODE` (Defaults to `true`)
+
+After the Node version is resolved, hnvm checks it against the rules in `lib/hnvm/min-safe-node.txt`. A
+Node release that is below the fixed release for its own major line (for example 22.1.0, when 22.23.4 fixes
+CVE-2026-111497) is replaced by that fixed release, with a warning that names both versions. The pin in your
+`package.json` or `.hnvmrc` is not edited. Set `HNVM_MIN_SAFE_NODE=false` to run exactly the version you pinned.
+Majors newer than the highest rule are never changed.
+
+The warning is not hidden by `HNVM_QUIET`. It does follow `HNVM_OUTPUT_DESTINATION`, and a failed write (for example, a closed stderr) never stops hnvm from running node.
+
+### `HNVM_MIN_SAFE_NODE_MAJOR` (Defaults to `false`)
+
+Some pinned lines have no fix at all (23, 25, and anything below 22). By default hnvm only warns about those and
+runs the pinned version, because moving to another major can break native add-ons. Set
+`HNVM_MIN_SAFE_NODE_MAJOR=true` to have hnvm run the fixed release named in `min-safe-node.txt` instead (24.22.1,
+or 26.12.1 for 25). The next security incident only needs a new line in that file.
+
+### Managed (MDM) settings for the two keys above
+
+`HNVM_MIN_SAFE_NODE` and `HNVM_MIN_SAFE_NODE_MAJOR` can also be set by an MDM configuration profile, which wins over the
+environment and every `.hnvmrc`, and which a user cannot edit. Deploy a Custom Settings payload for the preference domain
+`com.compass.hnvm`, with the keys as booleans:
+
+```xml
+<key>HNVM_MIN_SAFE_NODE</key><true/>
+<key>HNVM_MIN_SAFE_NODE_MAJOR</key><true/>
+```
+
+macOS writes the profile to `/Library/Managed Preferences/com.compass.hnvm.plist`, and hnvm reads it with `defaults`.
+A key that is not in the profile falls back to the environment, then `.hnvmrc`, then the default. Only these two keys are
+read from there for now. Values of `true`, `1` and `yes` (or `false`, `0` and `no`), in any case, are accepted; anything else
+is ignored. This only applies on macOS. To check what a Mac has, run
+`defaults read "/Library/Managed Preferences/com.compass.hnvm"`.
+
 ### `HNVM_NODE_DIST` (Defaults to `https://nodejs.org/dist`)
 
 Location of the NodeJS distribution files. If you provide a custom destination, you should ensure

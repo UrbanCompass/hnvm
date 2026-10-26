@@ -1,0 +1,16 @@
+# Minimum safe Node release for each pinned major line, one rule per line: <pinned major> <safe version>
+# A pinned major is a number, or "<N" for every major below N. The first matching rule wins.
+#
+# CVE-2026-111497 (Node2Shell): out-of-bounds write in the bundled Brotli decoder. Fixed only in
+# 22.23.4, 24.22.1 and 26.12.1 and newer. Lines 23 and 25 are end of life and have no fix, nor does anything below 22,
+# so those move to the nearest fixed line that is still supported (24, or 26 for 25). Majors above the highest rule
+# here (27+) are left alone.
+#
+# A safe version on the pin's own major is applied by default (HNVM_MIN_SAFE_NODE). A safe version on a different major
+# is only applied when HNVM_MIN_SAFE_NODE_MAJOR=true, otherwise hnvm warns and runs the pinned version.
+<22 24.22.1
+22 22.23.4
+23 24.22.1
+24 24.22.1
+25 26.12.1
+26 26.12.1
