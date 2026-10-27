@@ -10,8 +10,6 @@ workflows:
   publish:
     jobs:
       - publish:
-          context:
-            - anvil
           filters:
             branches:
               ignore: /.*/
