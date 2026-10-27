@@ -40,10 +40,15 @@ describe('managed (MDM) distrust settings', () => {
     expect(run(PRINT_DISTRUST, env, stubRaw({})).trim()).toBe(`certs=false/ extra=${FP_A}/ strict=true/`)
   })
 
-  it('win over the environment for every key the profile sets', () => {
+  it('win over the environment for the booleans, and add the environment\'s fingerprints to their own', () => {
     const env = {HNVM_DISTRUST_CERTS: 'false', HNVM_DISTRUST_CERTS_EXTRA: FP_A, HNVM_DISTRUST_CERTS_STRICT: 'false'}
     const stubs = stubRaw({HNVM_DISTRUST_CERTS: '1', HNVM_DISTRUST_CERTS_EXTRA: FP_B, HNVM_DISTRUST_CERTS_STRICT: 'YES'})
-    expect(run(PRINT_DISTRUST, env, stubs).trim()).toBe(`certs=true/true extra=${FP_B}/true strict=true/true`)
+    expect(run(PRINT_DISTRUST, env, stubs).trim()).toBe(`certs=true/true extra=${FP_B},${FP_A}/true strict=true/true`)
+  })
+
+  it('use only their own fingerprints when the environment has none', () => {
+    const stubs = stubRaw({HNVM_DISTRUST_CERTS_EXTRA: FP_B})
+    expect(run(PRINT_DISTRUST, {}, stubs)).toContain(`extra=${FP_B}/true `)
   })
 
   it('can turn distrusting off, whatever the environment says', () => {
@@ -56,10 +61,10 @@ describe('managed (MDM) distrust settings', () => {
     expect(run(PRINT_DISTRUST, {HNVM_DISTRUST_CERTS: 'false'}, stubs)).toContain('certs=false/ ')
   })
 
-  it('clear the extra fingerprints with an empty list', () => {
+  it('leave the environment\'s extra fingerprints alone with an empty list, which adds nothing', () => {
     for (const empty of ['(\n)', '']) {
       const stubs = stubRaw({HNVM_DISTRUST_CERTS_EXTRA: empty})
-      expect(run(PRINT_DISTRUST, {HNVM_DISTRUST_CERTS_EXTRA: FP_A}, stubs)).toContain('extra=/true')
+      expect(run(PRINT_DISTRUST, {HNVM_DISTRUST_CERTS_EXTRA: FP_A}, stubs)).toContain(`extra=${FP_A}/ `)
     }
   })
 

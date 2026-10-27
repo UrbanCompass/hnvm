@@ -131,6 +131,14 @@ function distrust_certs_failed() {
   warning "node v${node_ver} still trusts distrusted root certificates: $1"
 }
 
+function invalid_fingerprints_failed() {
+  if [[ "${distrust_certs_extra_managed}" == "true" ]]; then
+    distrust_certs_failed "invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA (yours or your organization's): $1"
+  else
+    distrust_certs_failed "invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA: $1"
+  fi
+}
+
 # Node bundles its root CAs inside the binary, so older versions keep trusting roots that have since
 # been distrusted. Neutralize the ones listed in distrusted-certs.txt (plus HNVM_DISTRUST_CERTS_EXTRA)
 # and record what was removed in a marker file so later invocations skip straight past this.
@@ -142,13 +150,23 @@ function distrust_node_certs() {
   local lock_dir="${node_path}/.hnvm-distrust-lock"
   local lock_retries=0
   local tmp_bin=
+  local recorded
+  local invalid_marker=
 
   # This runs on every invocation, so the up-to-date check only uses bash builtins (no subprocesses).
   # Bump the "v1" if the patching logic changes in a way that requires re-patching existing installs.
   marker="v1"$'\n'"$(< "${script_dir}/distrusted-certs.txt")"$'\n'"extra=${HNVM_DISTRUST_CERTS_EXTRA}"
 
-  if [[ -f "${marker_file}" && "$(< "${marker_file}")" == "${marker}" ]]; then
-    return 0
+  if [[ -f "${marker_file}" ]]; then
+    recorded="$(< "${marker_file}")"
+    if [[ "${recorded}" == "${marker}" ]]; then
+      return 0
+    fi
+    # Patched already, apart from invalid entries that are still in the list: repeat the warning without re-patching
+    if [[ "${recorded}" == "${marker}"$'\n'"invalid="* ]]; then
+      invalid_fingerprints_failed "${recorded##*$'\n'invalid=}"
+      return 0
+    fi
   fi
 
   # Accepts the output of `openssl x509 -noout -fingerprint -sha256` as-is: drops the
@@ -157,12 +175,11 @@ function distrust_node_certs() {
     sed 's/.*=//' | tr -d ': \t' | tr '[:upper:]' '[:lower:]' | grep -v '^$' | sort -u | paste -s -d ',' -)"
   invalid="$(echo "${fingerprints}" | tr ',' '\n' | grep -v -E '^[0-9a-f]{64}$' | paste -s -d ',' - || true)"
   if [[ -n "${invalid}" ]]; then
-    if [[ "${distrust_certs_extra_managed}" == "true" ]]; then
-      distrust_certs_failed "invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA (set by your organization): ${invalid}"
-    else
-      distrust_certs_failed "invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA: ${invalid}"
-    fi
-    return 0
+    invalid_fingerprints_failed "${invalid}"
+    # Still remove the valid ones, so a bad entry can't be used to skip the rest. The marker records the invalid
+    # entries, so later runs keep warning until the list is fixed.
+    fingerprints="$(echo "${fingerprints}" | tr ',' '\n' | grep -E '^[0-9a-f]{64}$' | paste -s -d ',' - || true)"
+    invalid_marker=$'\n'"invalid=${invalid}"
   fi
 
   # Only one hnvm invocation patches a given node version at a time; the rest wait for it and then
@@ -186,7 +203,7 @@ function distrust_node_certs() {
   # shellcheck disable=SC2064
   trap "rmdir $(printf '%q' "${lock_dir}") 2>/dev/null || true" EXIT
 
-  if [[ ! -f "${marker_file}" || "$(< "${marker_file}")" != "${marker}" ]]; then
+  if [[ ! -f "${marker_file}" || "$(< "${marker_file}")" != "${marker}${invalid_marker}" ]]; then
     patch_node_certs
   fi
 
@@ -252,7 +269,7 @@ function patch_node_certs() {
     rm -f "${tmp_bin}"
   fi
 
-  { echo "${marker}" > "${marker_file}"; } 2>/dev/null || true
+  { echo "${marker}${invalid_marker}" > "${marker_file}"; } 2>/dev/null || true
 }
 
 function download_pnpm() {

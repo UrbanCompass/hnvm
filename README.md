@@ -265,6 +265,7 @@ Comma-separated SHA-256 fingerprints of additional root certificates to remove, 
 built-in list. Colons, case and a leading `sha256 Fingerprint=` label don't matter, so the output
 of `openssl x509 -noout -fingerprint -sha256` works as-is. Anything that isn't a SHA-256
 fingerprint after that is rejected (a warning, or an error with `HNVM_DISTRUST_CERTS_STRICT=true`).
+The valid fingerprints are still removed, and the warning repeats on every run until the list is fixed.
 Changing this list re-patches each node version the next time it's used.
 
 ### `HNVM_DISTRUST_CERTS_STRICT` (Defaults to `false`)
@@ -295,8 +296,8 @@ refuse to run instead.
 macOS writes the profile to `/Library/Managed Preferences/com.compass.hnvm.plist`, and hnvm reads it with `defaults`.
 A key that is not in the profile falls back to the environment, then `.hnvmrc`, then the default. Only these keys are
 read from there for now. For the booleans, values of `true`, `1` and `yes` (or `false`, `0` and `no`), in any case, are
-accepted; anything else is ignored. A managed `HNVM_DISTRUST_CERTS_EXTRA` replaces the environment's list rather than adding
-to it. This only applies on macOS. To check what a Mac has, run
+accepted; anything else is ignored. A managed `HNVM_DISTRUST_CERTS_EXTRA` is always removed, and any fingerprints set in the
+environment or `.hnvmrc` are removed on top of it. This only applies on macOS. To check what a Mac has, run
 `defaults read "/Library/Managed Preferences/com.compass.hnvm"`.
 
 ### `HNVM_NOFALLBACK` (Defaults to `false`)

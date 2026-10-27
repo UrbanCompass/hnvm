@@ -143,11 +143,8 @@ describeUnlessManaged('removing distrusted root certificates from node', () => {
     expect(fingerprints).not.toContain(extra)
     expect(fs.readFileSync(markerFile, 'utf-8')).not.toEqual(markerBefore)
   })
-  it('rejects invalid fingerprints in HNVM_DISTRUST_CERTS_EXTRA without recording them', () => {
+  it('rejects invalid fingerprints in HNVM_DISTRUST_CERTS_EXTRA but still removes the valid ones', () => {
     const markerBefore = fs.readFileSync(markerFile, 'utf-8')
-
-    const warned = rootFingerprints({HNVM_DISTRUST_CERTS_EXTRA: 'not-a-fingerprint'})
-    expect(warned.stderr).toContain('invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA: not-a-fingerprint')
 
     const strict = context.execFileSyncSeparateStreams(context.binaries.node, ['--version'], {
       HNVM_DISTRUST_CERTS_EXTRA: 'not-a-fingerprint',
@@ -155,8 +152,21 @@ describeUnlessManaged('removing distrusted root certificates from node', () => {
     })
     expect(strict.status).not.toBe(0)
     expect(strict.stdout).not.toContain(VERSION)
-
     expect(fs.readFileSync(markerFile, 'utf-8')).toEqual(markerBefore)
+
+    // Removed roots are now placeholders, which share one fingerprint, so pick a root that is bundled only once
+    const current = rootFingerprints().fingerprints
+    const extra = current.find(fp => current.indexOf(fp) === current.lastIndexOf(fp))
+    const env = {HNVM_DISTRUST_CERTS_EXTRA: `not-a-fingerprint,${extra}`}
+    const warned = rootFingerprints(env)
+    expect(warned.stderr).toContain('invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA: not-a-fingerprint')
+    expect(warned.stderr).toContain(`Removed 1 distrusted root certificate(s) from node v${VERSION}`)
+    expect(warned.fingerprints).not.toContain(extra)
+
+    // Later runs keep warning, without patching again
+    const again = rootFingerprints(env)
+    expect(again.stderr).toContain('invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA: not-a-fingerprint')
+    expect(again.stderr).not.toContain('Removed')
   })
 })
 

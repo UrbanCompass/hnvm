@@ -35,9 +35,10 @@ function managed_pref_list() {
   echo "${raw}"
 }
 
-# HNVM_DISTRUST_CERTS, HNVM_DISTRUST_CERTS_EXTRA and HNVM_DISTRUST_CERTS_STRICT: a managed value replaces whatever the
-# environment and .hnvmrc set. Sets distrust_certs_managed, distrust_certs_extra_managed and distrust_certs_strict_managed
-# to true for the keys it replaced, so messages don't suggest a setting the user cannot change.
+# HNVM_DISTRUST_CERTS and HNVM_DISTRUST_CERTS_STRICT: a managed value replaces whatever the environment and .hnvmrc set.
+# HNVM_DISTRUST_CERTS_EXTRA: managed fingerprints are always removed, and the user's are added on top (distrusting more roots
+# only makes their own node stricter). Sets distrust_certs_managed, distrust_certs_extra_managed and
+# distrust_certs_strict_managed to true for the keys the profile sets, so messages don't suggest a setting the user cannot change.
 # shellcheck disable=SC2034 # read by ensure_bin.sh
 function apply_managed_distrust_certs() {
   local managed
@@ -48,9 +49,10 @@ function apply_managed_distrust_certs() {
     distrust_certs_managed=true
   fi
 
-  # An empty managed list still replaces the environment's, so a profile can clear it
-  if managed="$(managed_pref_list HNVM_DISTRUST_CERTS_EXTRA)"; then
-    HNVM_DISTRUST_CERTS_EXTRA="${managed}"
+  # An unset key returns 1, which must not trip set -e. An empty managed list adds nothing, so it leaves the flag unset too.
+  managed="$(managed_pref_list HNVM_DISTRUST_CERTS_EXTRA || true)"
+  if [[ -n "${managed}" ]]; then
+    HNVM_DISTRUST_CERTS_EXTRA="${managed}${HNVM_DISTRUST_CERTS_EXTRA:+,${HNVM_DISTRUST_CERTS_EXTRA}}"
     distrust_certs_extra_managed=true
   fi
 
