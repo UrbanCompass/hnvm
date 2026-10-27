@@ -10,6 +10,8 @@ workflows:
   publish:
     jobs:
       - publish:
+          context:
+            - anvil
           filters:
             branches:
               ignore: /.*/
@@ -29,7 +31,7 @@ jobs:
           working_directory: ./test
   publish:
     docker:
-      - image: cimg/base:2020.01
+      - image: cimg/base:2026.10-24.04
     working_directory: '~'
     steps:
       - checkout:
@@ -41,8 +43,13 @@ jobs:
       - run:
           name: Upload hnvm gzip to Nexus
           command: |
-            curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --http1.1 \
+            curl --fail-with-body -sS -u "${NEXUS_USER}:${NEXUS_PASSWORD}" --http1.1 \
             --upload-file ~/hnvm.tar.gz \
+            ${NEXUS_URL}/repository/generic-local/hnvm/${CIRCLE_TAG}/hnvm.tar.gz
+      - run:
+          name: Verify hnvm gzip exists in Nexus
+          command: |
+            curl -fsSI -u "${NEXUS_USER}:${NEXUS_PASSWORD}" --http1.1 \
             ${NEXUS_URL}/repository/generic-local/hnvm/${CIRCLE_TAG}/hnvm.tar.gz
       - run:
           name: SHA-256
