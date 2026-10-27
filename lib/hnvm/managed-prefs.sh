@@ -7,26 +7,28 @@
 # This is a plain assignment (not an overridable default) so that no environment variable can point it somewhere else.
 managed_prefs_plist="/Library/Managed Preferences/com.compass.hnvm"
 
-# Prints the managed value of key $1 as `defaults` prints it. Prints nothing when it is not set or this is not macOS.
+# Prints the managed value of key $1 as `defaults` prints it. Returns 1 (printing nothing) when it is not set or this is not
+# macOS, so callers can tell an absent key from one set to an empty value.
 # Checking for the file first means a machine without the profile never pays for a `defaults` subprocess.
 function managed_pref_raw() {
-  [[ -x /usr/bin/defaults && -f "${managed_prefs_plist}.plist" ]] || return 0
-  /usr/bin/defaults read "${managed_prefs_plist}" "$1" 2>/dev/null || true
+  [[ -x /usr/bin/defaults && -f "${managed_prefs_plist}.plist" ]] || return 1
+  /usr/bin/defaults read "${managed_prefs_plist}" "$1" 2>/dev/null
 }
 
 # Prints the managed value of key $1 as true or false. Prints nothing when it is not set, is not a boolean, or this is not macOS.
 function managed_pref() {
-  case "$(managed_pref_raw "$1" | tr '[:upper:]' '[:lower:]')" in
+  case "$({ managed_pref_raw "$1" || true; } | tr '[:upper:]' '[:lower:]')" in
     1|true|yes) echo true ;;
     0|false|no) echo false ;;
   esac
 }
 
 # Prints the managed value of key $1 as a comma-separated list. It may be a string (already comma-separated) or an array,
-# which `defaults` prints as one quoted or bare element per line between ( and ). Prints nothing when it is not set.
+# which `defaults` prints as one quoted or bare element per line between ( and ). Returns 1 (printing nothing) when it is not
+# set; an empty string or array prints nothing and returns 0, since that is a managed value too.
 function managed_pref_list() {
   local raw
-  raw="$(managed_pref_raw "$1")"
+  raw="$(managed_pref_raw "$1")" || return 1
   if [[ "${raw}" == "("* ]]; then
     raw="$(echo "${raw}" | sed -e '1d' -e '$d' -e 's/^[[:space:]]*"\{0,1\}//' -e 's/"\{0,1\},\{0,1\}[[:space:]]*$//' | paste -s -d ',' -)"
   fi
@@ -46,8 +48,8 @@ function apply_managed_distrust_certs() {
     distrust_certs_managed=true
   fi
 
-  managed="$(managed_pref_list HNVM_DISTRUST_CERTS_EXTRA)"
-  if [[ -n "${managed}" ]]; then
+  # An empty managed list still replaces the environment's, so a profile can clear it
+  if managed="$(managed_pref_list HNVM_DISTRUST_CERTS_EXTRA)"; then
     HNVM_DISTRUST_CERTS_EXTRA="${managed}"
     distrust_certs_extra_managed=true
   fi

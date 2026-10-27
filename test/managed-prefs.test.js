@@ -18,13 +18,13 @@ function run(script, env = {}, stubs = '') {
 }
 
 // A stand-in for managed_pref_raw, so parsing and precedence are tested on any platform (CI runs on Linux, where there is no
-// `defaults`). values maps a key to what `defaults read` would print for it.
+// `defaults`). values maps a key to what `defaults read` would print for it; any other key is not set.
 const stubRaw = values =>
   'managed_pref_raw() { case "$1" in ' +
   Object.entries(values)
     .map(([key, value]) => `${key}) printf '%b\\n' ${JSON.stringify(value)} ;;`)
     .join(' ') +
-  ' esac; }'
+  ' *) return 1 ;; esac; }'
 
 const PRINT_DISTRUST =
   'apply_managed_distrust_certs; ' +
@@ -56,6 +56,13 @@ describe('managed (MDM) distrust settings', () => {
     expect(run(PRINT_DISTRUST, {HNVM_DISTRUST_CERTS: 'false'}, stubs)).toContain('certs=false/ ')
   })
 
+  it('clear the extra fingerprints with an empty list', () => {
+    for (const empty of ['(\n)', '']) {
+      const stubs = stubRaw({HNVM_DISTRUST_CERTS_EXTRA: empty})
+      expect(run(PRINT_DISTRUST, {HNVM_DISTRUST_CERTS_EXTRA: FP_A}, stubs)).toContain('extra=/true')
+    }
+  })
+
   it('leave the environment in charge for a key they do not set', () => {
     const stubs = stubRaw({HNVM_DISTRUST_CERTS_STRICT: 'true'})
     expect(run(PRINT_DISTRUST, {HNVM_DISTRUST_CERTS_EXTRA: FP_A}, stubs).trim()).toBe(
@@ -73,9 +80,13 @@ describe('managed_pref_list', () => {
     expect(list(`(\n    ${FP_A},\n    "sha256 Fingerprint=${FP_B}"\n)`)).toBe(`${FP_A},sha256 Fingerprint=${FP_B}`)
   })
 
-  it('prints nothing for an empty array', () => expect(list('(\n)')).toBe(''))
+  it('prints nothing for an empty array, but reports it as set', () => {
+    expect(run('managed_pref_list KEY && echo "[set]"', {}, stubRaw({KEY: '(\n)'})).trim()).toBe('[set]')
+  })
 
-  it('prints nothing for a key that is not set', () => expect(run('managed_pref_list KEY', {}, stubRaw({})).trim()).toBe(''))
+  it('prints nothing for a key that is not set, and reports it as unset', () => {
+    expect(run('managed_pref_list KEY || echo "[unset]"', {}, stubRaw({})).trim()).toBe('[unset]')
+  })
 })
 
 const describeOnMac = process.platform === 'darwin' ? describe : describe.skip
@@ -84,17 +95,19 @@ describeOnMac('reading managed lists with defaults', () => {
   let dir
   const plist = () => path.join(dir, 'com.compass.hnvm')
   const read = key =>
-    run(`managed_prefs_plist=${JSON.stringify(plist())}; managed_pref_list ${key}`).trim()
+    run(`managed_prefs_plist=${JSON.stringify(plist())}; managed_pref_list ${key} || echo "[unset]"`).trim()
 
   beforeAll(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hnvm-managed'))
     childProcess.execFileSync('/usr/bin/defaults', ['write', plist(), 'AS_ARRAY', '-array', FP_A, `sha256 Fingerprint=${FP_B}`])
     childProcess.execFileSync('/usr/bin/defaults', ['write', plist(), 'AS_STRING', '-string', `${FP_A},${FP_B}`])
+    childProcess.execFileSync('/usr/bin/defaults', ['write', plist(), 'EMPTY_ARRAY', '-array'])
   })
 
   afterAll(() => fs.rmSync(dir, {recursive: true, force: true}))
 
   it('reads an array', () => expect(read('AS_ARRAY')).toBe(`${FP_A},sha256 Fingerprint=${FP_B}`))
   it('reads a string', () => expect(read('AS_STRING')).toBe(`${FP_A},${FP_B}`))
-  it('prints nothing for a key that is not set', () => expect(read('NOT_THERE')).toBe(''))
+  it('reads an empty array as set', () => expect(read('EMPTY_ARRAY')).toBe(''))
+  it('reports a key that is not set', () => expect(read('NOT_THERE')).toBe('[unset]'))
 })
