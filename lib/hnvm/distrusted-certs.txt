@@ -1,0 +1,10 @@
+# Root CA certificates hnvm removes from every Node.js binary it manages, identified by the SHA-256
+# fingerprint of the certificate (DER). Lines starting with # are ignored. Extend this list per
+# machine/project with HNVM_DISTRUST_CERTS_EXTRA instead of editing this file.
+
+# eMudhra intermediate CA key compromise, 2026-10-20: https://emudhra.we-have-a-problem.com
+# Fixed upstream in Node.js 22.23.4, 24.22.1 and 26.12.1, which no longer ship these roots.
+# emSign ECC Root CA - G3
+86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b
+# AAA Certificate Services (reached through Sectigo cross-signs of the compromised intermediates)
+d7a7a0fb5d7e2731d771e9484ebcdef71d5f0c3e0a2948782bc83ee0ea699ef4

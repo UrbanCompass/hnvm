@@ -57,6 +57,9 @@ export HNVM_YARN_DIST=${HNVM_YARN_DIST:-'https://yarnpkg.com/downloads'}
 export HNVM_BUN_DIST=${HNVM_BUN_DIST:-'https://github.com/oven-sh/bun/releases/download'}
 export HNVM_BUN_VARIANT=${HNVM_BUN_VARIANT:-''}
 export HNVM_SKIP_URL_VALIDATION=${HNVM_SKIP_URL_VALIDATION:-false}
+export HNVM_DISTRUST_CERTS=${HNVM_DISTRUST_CERTS:-true}
+export HNVM_DISTRUST_CERTS_EXTRA=${HNVM_DISTRUST_CERTS_EXTRA:-''}
+export HNVM_DISTRUST_CERTS_STRICT=${HNVM_DISTRUST_CERTS_STRICT:-false}
 
 # Whether this invocation is a bun/bunx command. Match on the basename of $0 (not the full path)
 # so directories that happen to contain "bun" don't get misdetected.
@@ -192,6 +195,8 @@ if [[ -z "${node_ver}" && "${is_bun}" != "true" ]]; then
   exit 1
 fi
 
+# shellcheck source=/dev/null
+source "${script_dir}/managed-prefs.sh"
 # shellcheck source=/dev/null
 source "${script_dir}/min-safe-node.sh"
 

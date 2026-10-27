@@ -188,19 +188,7 @@ or 26.12.1 for 25). The next security incident only needs a new line in that fil
 ### Managed (MDM) settings for the two keys above
 
 `HNVM_MIN_SAFE_NODE` and `HNVM_MIN_SAFE_NODE_MAJOR` can also be set by an MDM configuration profile, which wins over the
-environment and every `.hnvmrc`, and which a user cannot edit. Deploy a Custom Settings payload for the preference domain
-`com.compass.hnvm`, with the keys as booleans:
-
-```xml
-<key>HNVM_MIN_SAFE_NODE</key><true/>
-<key>HNVM_MIN_SAFE_NODE_MAJOR</key><true/>
-```
-
-macOS writes the profile to `/Library/Managed Preferences/com.compass.hnvm.plist`, and hnvm reads it with `defaults`.
-A key that is not in the profile falls back to the environment, then `.hnvmrc`, then the default. Only these two keys are
-read from there for now. Values of `true`, `1` and `yes` (or `false`, `0` and `no`), in any case, are accepted; anything else
-is ignored. This only applies on macOS. To check what a Mac has, run
-`defaults read "/Library/Managed Preferences/com.compass.hnvm"`.
+environment and every `.hnvmrc`, and which a user cannot edit. See [Managed (MDM) settings](#managed-mdm-settings).
 
 ### `HNVM_NODE_DIST` (Defaults to `https://nodejs.org/dist`)
 
@@ -246,6 +234,71 @@ Variant of the bun distribution files to fetch. Set to `baseline` for CPUs witho
 `musl` for musl-based Linux distributions (e.g. Alpine). This is appended to the download filename
 (e.g. `bun-linux-x64-musl.zip`).
 
+### `HNVM_DISTRUST_CERTS` (Defaults to `true`)
+
+Node bundles its trusted root certificates inside the `node` binary, so an old Node version keeps
+trusting a root CA even after that CA has been compromised. Projects can pin old versions
+indefinitely. To keep them safe, HNVM removes known-distrusted roots from every Node binary it
+manages. The list lives in [`lib/hnvm/distrusted-certs.txt`](lib/hnvm/distrusted-certs.txt) and
+currently covers the
+[eMudhra CA compromise](https://emudhra.we-have-a-problem.com) (`emSign ECC Root CA - G3` and
+`AAA Certificate Services`).
+
+HNVM patches a binary the first time that version is used, both for new downloads and for versions
+already in `HNVM_PATH`. Each removed root is overwritten in place with an expired placeholder
+certificate. On macOS the binary is then re-signed ad hoc, keeping its entitlements. Before HNVM
+swaps the patched binary in, it checks that the binary runs and no longer trusts the removed roots.
+The result is recorded in `${HNVM_PATH}/node/<version>/.hnvm-distrusted-certs` so later runs skip
+the check.
+
+This applies to `node`, `npm`, `npx`, `pnpm` and `yarn`, which all run through the patched node.
+It does not apply to `bun`. It also does not touch the OS certificate store, which Node reads
+instead when run with `--use-system-ca`/`--use-openssl-ca`, or which you may point
+`NODE_EXTRA_CA_CERTS` at.
+
+Set to `false` to opt out. Patching is one-way: turning it off later does not restore a patched
+binary. To get the original back, delete `${HNVM_PATH}/node/<version>` and HNVM re-downloads it.
+
+### `HNVM_DISTRUST_CERTS_EXTRA` (Defaults to '')
+
+Comma-separated SHA-256 fingerprints of additional root certificates to remove, on top of the
+built-in list. Colons, case and a leading `sha256 Fingerprint=` label don't matter, so the output
+of `openssl x509 -noout -fingerprint -sha256` works as-is. Anything that isn't a SHA-256
+fingerprint after that is rejected (a warning, or an error with `HNVM_DISTRUST_CERTS_STRICT=true`).
+The valid fingerprints are still removed, and the warning repeats on every run until the list is fixed.
+Changing this list re-patches each node version the next time it's used.
+
+### `HNVM_DISTRUST_CERTS_STRICT` (Defaults to `false`)
+
+If HNVM can't remove the distrusted roots from a node binary (for example the binary can't be
+written, re-signing fails, or the patched binary fails verification), by default it prints a warning,
+keeps the original binary and runs it anyway. It tries again on the next run. Set to `true` to
+refuse to run instead.
+
+### Managed (MDM) settings
+
+`HNVM_MIN_SAFE_NODE`, `HNVM_MIN_SAFE_NODE_MAJOR`, `HNVM_DISTRUST_CERTS`, `HNVM_DISTRUST_CERTS_EXTRA` and
+`HNVM_DISTRUST_CERTS_STRICT` can also be set by an MDM configuration profile, which wins over the environment and every
+`.hnvmrc`, and which a user cannot edit. Deploy a Custom Settings payload for the preference domain `com.compass.hnvm`.
+`HNVM_DISTRUST_CERTS_EXTRA` is an array of fingerprints (a comma-separated string also works); the other keys are booleans:
+
+```xml
+<key>HNVM_MIN_SAFE_NODE</key><true/>
+<key>HNVM_MIN_SAFE_NODE_MAJOR</key><true/>
+<key>HNVM_DISTRUST_CERTS</key><true/>
+<key>HNVM_DISTRUST_CERTS_STRICT</key><true/>
+<key>HNVM_DISTRUST_CERTS_EXTRA</key>
+<array>
+  <string>0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef</string>
+</array>
+```
+
+macOS writes the profile to `/Library/Managed Preferences/com.compass.hnvm.plist`, and hnvm reads it with `defaults`.
+A key that is not in the profile falls back to the environment, then `.hnvmrc`, then the default. Only these keys are
+read from there for now. For the booleans, values of `true`, `1` and `yes` (or `false`, `0` and `no`), in any case, are
+accepted; anything else is ignored. A managed `HNVM_DISTRUST_CERTS_EXTRA` is always removed, and any fingerprints set in the
+environment or `.hnvmrc` are removed on top of it. This only applies on macOS. To check what a Mac has, run
+`defaults read "/Library/Managed Preferences/com.compass.hnvm"`.
 
 ### `HNVM_NOFALLBACK` (Defaults to `false`)
 

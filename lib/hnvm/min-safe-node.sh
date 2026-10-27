@@ -2,6 +2,7 @@
 
 # Raises a pinned Node version that has known security problems to the fixed release for its line.
 # Sourced by config.sh once the Node version is resolved to an exact version. Written for bash 3.2 (the macOS default).
+# Needs managed_pref from managed-prefs.sh.
 #
 # Reads:  node_ver (an exact version), HNVM_MIN_SAFE_NODE, HNVM_MIN_SAFE_NODE_MAJOR
 # Sets:   node_ver, when a version is replaced
@@ -31,22 +32,6 @@ function security_warning() {
     # ">&2" first, so the message goes to the real stderr; only the command's own error output is discarded
     echo -e "${message}" >&2 2>/dev/null || true
   fi
-}
-
-# Managed (MDM) preferences: a configuration profile for the com.compass.hnvm domain is written to /Library/Managed Preferences,
-# which only an administrator can change. For the two keys below, a managed value wins over the environment and every .hnvmrc.
-# This is a plain assignment (not an overridable default) so that no environment variable can point it somewhere else.
-managed_prefs_plist="/Library/Managed Preferences/com.compass.hnvm"
-
-# Prints the managed value of key $1 as true or false. Prints nothing when it is not set, is not a boolean, or this is not macOS.
-function managed_pref() {
-  local raw
-  [[ -x /usr/bin/defaults ]] || return 0
-  raw="$(/usr/bin/defaults read "${managed_prefs_plist}" "$1" 2>/dev/null)" || return 0
-  case "$(echo "${raw}" | tr '[:upper:]' '[:lower:]')" in
-    1|true|yes) echo true ;;
-    0|false|no) echo false ;;
-  esac
 }
 
 function apply_min_safe_node() {
