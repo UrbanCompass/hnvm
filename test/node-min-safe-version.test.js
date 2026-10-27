@@ -18,7 +18,7 @@ function floor(pinned, env = {}, afterSource = NO_MANAGED_PREFS) {
     'bash',
     [
       '-c',
-      'set -e; script_dir="$1"; COMMAND_OUTPUT="&2"; source "$script_dir/min-safe-node.sh"; eval "$3"; node_ver="$2"; apply_min_safe_node; echo "RESULT=$node_ver"',
+      'set -e; script_dir="$1"; COMMAND_OUTPUT="&2"; source "$script_dir/managed-prefs.sh"; source "$script_dir/min-safe-node.sh"; eval "$3"; node_ver="$2"; apply_min_safe_node; echo "RESULT=$node_ver"',
       'bash',
       libDir,
       pinned,
@@ -93,7 +93,7 @@ describe('minimum safe node version rules', () => {
   it('ignores HNVM_QUIET, so a security notice is never hidden', () => {
     const result = childProcess.spawnSync(
       'bash',
-      ['-c', 'script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; ' + NO_MANAGED_PREFS + '; node_ver=22.1.0; apply_min_safe_node', 'bash', libDir],
+      ['-c', 'script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/managed-prefs.sh"; source "$script_dir/min-safe-node.sh"; ' + NO_MANAGED_PREFS + '; node_ver=22.1.0; apply_min_safe_node', 'bash', libDir],
       {encoding: 'utf-8', env: {PATH: process.env.PATH}},
     )
     expect(result.stderr).toContain('using 22.23.4 instead')
@@ -104,7 +104,7 @@ describe('minimum safe node version rules', () => {
     fs.writeFileSync(dest, '')
     const result = childProcess.spawnSync(
       'bash',
-      ['-c', 'script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; ' + NO_MANAGED_PREFS + '; node_ver=22.1.0; apply_min_safe_node', 'bash', libDir],
+      ['-c', 'script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/managed-prefs.sh"; source "$script_dir/min-safe-node.sh"; ' + NO_MANAGED_PREFS + '; node_ver=22.1.0; apply_min_safe_node', 'bash', libDir],
       {encoding: 'utf-8', env: {PATH: process.env.PATH, HNVM_OUTPUT_DESTINATION: dest, HNVM_QUIET: 'true'}},
     )
     const written = fs.readFileSync(dest, 'utf-8')
@@ -116,7 +116,7 @@ describe('minimum safe node version rules', () => {
   it('does not stop hnvm when the warning cannot be written (stderr closed)', () => {
     const result = childProcess.spawnSync(
       'bash',
-      ['-c', 'set -e; script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/min-safe-node.sh"; ' + NO_MANAGED_PREFS + '; node_ver=22.1.0; exec 2>&-; apply_min_safe_node; echo "RESULT=$node_ver"', 'bash', libDir],
+      ['-c', 'set -e; script_dir="$1"; COMMAND_OUTPUT=/dev/null; source "$script_dir/managed-prefs.sh"; source "$script_dir/min-safe-node.sh"; ' + NO_MANAGED_PREFS + '; node_ver=22.1.0; exec 2>&-; apply_min_safe_node; echo "RESULT=$node_ver"', 'bash', libDir],
       {encoding: 'utf-8', env: {PATH: process.env.PATH}},
     )
     expect(result.status).toBe(0)
@@ -177,7 +177,7 @@ describeOnMac('reading the managed preferences file with defaults', () => {
   const read = key => {
     const out = childProcess.spawnSync(
       'bash',
-      ['-c', 'script_dir="$1"; source "$script_dir/min-safe-node.sh"; managed_prefs_plist="$2"; managed_pref "$3"', 'bash', libDir, plist(), key],
+      ['-c', 'script_dir="$1"; source "$script_dir/managed-prefs.sh"; source "$script_dir/min-safe-node.sh"; managed_prefs_plist="$2"; managed_pref "$3"', 'bash', libDir, plist(), key],
       {encoding: 'utf-8', env: {PATH: process.env.PATH}},
     )
     return out.stdout.trim()

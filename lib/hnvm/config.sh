@@ -196,6 +196,8 @@ if [[ -z "${node_ver}" && "${is_bun}" != "true" ]]; then
 fi
 
 # shellcheck source=/dev/null
+source "${script_dir}/managed-prefs.sh"
+# shellcheck source=/dev/null
 source "${script_dir}/min-safe-node.sh"
 
 function is_invalid_version() {

@@ -188,19 +188,7 @@ or 26.12.1 for 25). The next security incident only needs a new line in that fil
 ### Managed (MDM) settings for the two keys above
 
 `HNVM_MIN_SAFE_NODE` and `HNVM_MIN_SAFE_NODE_MAJOR` can also be set by an MDM configuration profile, which wins over the
-environment and every `.hnvmrc`, and which a user cannot edit. Deploy a Custom Settings payload for the preference domain
-`com.compass.hnvm`, with the keys as booleans:
-
-```xml
-<key>HNVM_MIN_SAFE_NODE</key><true/>
-<key>HNVM_MIN_SAFE_NODE_MAJOR</key><true/>
-```
-
-macOS writes the profile to `/Library/Managed Preferences/com.compass.hnvm.plist`, and hnvm reads it with `defaults`.
-A key that is not in the profile falls back to the environment, then `.hnvmrc`, then the default. Only these two keys are
-read from there for now. Values of `true`, `1` and `yes` (or `false`, `0` and `no`), in any case, are accepted; anything else
-is ignored. This only applies on macOS. To check what a Mac has, run
-`defaults read "/Library/Managed Preferences/com.compass.hnvm"`.
+environment and every `.hnvmrc`, and which a user cannot edit. See [Managed (MDM) settings](#managed-mdm-settings).
 
 ### `HNVM_NODE_DIST` (Defaults to `https://nodejs.org/dist`)
 
@@ -285,6 +273,31 @@ If HNVM can't remove the distrusted roots from a node binary (for example the bi
 written, re-signing fails, or the patched binary fails verification), by default it prints a warning,
 keeps the original binary and runs it anyway. It tries again on the next run. Set to `true` to
 refuse to run instead.
+
+### Managed (MDM) settings
+
+`HNVM_MIN_SAFE_NODE`, `HNVM_MIN_SAFE_NODE_MAJOR`, `HNVM_DISTRUST_CERTS`, `HNVM_DISTRUST_CERTS_EXTRA` and
+`HNVM_DISTRUST_CERTS_STRICT` can also be set by an MDM configuration profile, which wins over the environment and every
+`.hnvmrc`, and which a user cannot edit. Deploy a Custom Settings payload for the preference domain `com.compass.hnvm`.
+`HNVM_DISTRUST_CERTS_EXTRA` is an array of fingerprints (a comma-separated string also works); the other keys are booleans:
+
+```xml
+<key>HNVM_MIN_SAFE_NODE</key><true/>
+<key>HNVM_MIN_SAFE_NODE_MAJOR</key><true/>
+<key>HNVM_DISTRUST_CERTS</key><true/>
+<key>HNVM_DISTRUST_CERTS_STRICT</key><true/>
+<key>HNVM_DISTRUST_CERTS_EXTRA</key>
+<array>
+  <string>0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef</string>
+</array>
+```
+
+macOS writes the profile to `/Library/Managed Preferences/com.compass.hnvm.plist`, and hnvm reads it with `defaults`.
+A key that is not in the profile falls back to the environment, then `.hnvmrc`, then the default. Only these keys are
+read from there for now. For the booleans, values of `true`, `1` and `yes` (or `false`, `0` and `no`), in any case, are
+accepted; anything else is ignored. A managed `HNVM_DISTRUST_CERTS_EXTRA` replaces the environment's list rather than adding
+to it. This only applies on macOS. To check what a Mac has, run
+`defaults read "/Library/Managed Preferences/com.compass.hnvm"`.
 
 ### `HNVM_NOFALLBACK` (Defaults to `false`)
 

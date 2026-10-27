@@ -17,6 +17,10 @@ bun_ver=
 # Set by config.sh (sourced below) based on the invocation name; declared here so shellcheck can
 # see it is assigned before use.
 is_bun=false
+# Set to true by apply_managed_distrust_certs for each distrust setting an MDM profile overrides
+distrust_certs_managed=
+distrust_certs_extra_managed=
+distrust_certs_strict_managed=
 
 # shellcheck source=/dev/null
 source "${script_dir}/colors.sh"
@@ -115,7 +119,11 @@ function distrust_certs_failed() {
 
   if [[ "${HNVM_DISTRUST_CERTS_STRICT}" == "true" ]]; then
     error "Unable to remove distrusted root certificates from node v${node_ver}: $1"
-    error "Set HNVM_DISTRUST_CERTS=false to run this node anyway (it will trust those certificates)."
+    if [[ "${distrust_certs_managed}" == "true" || "${distrust_certs_strict_managed}" == "true" ]]; then
+      error "Your organization requires this, so node will not run until they can be removed."
+    else
+      error "Set HNVM_DISTRUST_CERTS=false to run this node anyway (it will trust those certificates)."
+    fi
     exit 1
   fi
 
@@ -149,7 +157,11 @@ function distrust_node_certs() {
     sed 's/.*=//' | tr -d ': \t' | tr '[:upper:]' '[:lower:]' | grep -v '^$' | sort -u | paste -s -d ',' -)"
   invalid="$(echo "${fingerprints}" | tr ',' '\n' | grep -v -E '^[0-9a-f]{64}$' | paste -s -d ',' - || true)"
   if [[ -n "${invalid}" ]]; then
-    distrust_certs_failed "invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA: ${invalid}"
+    if [[ "${distrust_certs_extra_managed}" == "true" ]]; then
+      distrust_certs_failed "invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA (set by your organization): ${invalid}"
+    else
+      distrust_certs_failed "invalid SHA-256 fingerprint(s) in HNVM_DISTRUST_CERTS_EXTRA: ${invalid}"
+    fi
     return 0
   fi
 
@@ -357,8 +369,12 @@ if [[ "${is_bun}" != "true" ]] && [[ ! -x "${node_bin}" ]]; then
 fi
 
 # Runs before the pnpm/yarn downloads below, since the pnpm installer makes HTTPS requests with node
-if [[ "${is_bun}" != "true" && "${HNVM_DISTRUST_CERTS}" != "false" ]]; then
-  distrust_node_certs
+if [[ "${is_bun}" != "true" ]]; then
+  # Defined in managed-prefs.sh (sourced by config.sh). Managed values win over the environment and .hnvmrc.
+  apply_managed_distrust_certs
+  if [[ "${HNVM_DISTRUST_CERTS}" != "false" ]]; then
+    distrust_node_certs
+  fi
 fi
 
 if [[ "${0}" == *pnpm || "${0}" == *pnpx ]] && [[ ! -f "${pnpm_bin}" || "$("${node_bin}" "${pnpm_bin}" -v)" != "${pnpm_ver}" ]]; then
