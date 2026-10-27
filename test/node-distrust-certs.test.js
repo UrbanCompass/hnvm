@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const childProcess = require('child_process')
-const {createTestContext} = require('./utils.js')
+const {createTestContext, describeUnlessManaged} = require('./utils.js')
 
 jest.setTimeout(120_000)
 
@@ -32,7 +32,7 @@ function tmpFiles(dir) {
   return fs.readdirSync(dir).filter(file => file.includes('.hnvm-tmp'))
 }
 
-describe('removing distrusted root certificates from node', () => {
+describeUnlessManaged('removing distrusted root certificates from node', () => {
   // 18.12.0 bundles both of the eMudhra-affected roots
   const VERSION = '18.12.0'
   let context
@@ -160,7 +160,7 @@ describe('removing distrusted root certificates from node', () => {
   })
 })
 
-describe('removing distrusted root certificates from node without tls.rootCertificates', () => {
+describeUnlessManaged('removing distrusted root certificates from node without tls.rootCertificates', () => {
   // tls.rootCertificates was added in node 12.16.0. 10.24.1 bundles AAA Certificate Services, plus one
   // more of its roots is removed through HNVM_DISTRUST_CERTS_EXTRA.
   const VERSION = '10.24.1'
