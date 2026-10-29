@@ -12,6 +12,8 @@ workflows:
   publish:
     jobs:
       - release:
+          # One release at a time, so overlapping tags can't race on the Nexus `latest` read-compare-upload
+          serial-group: << pipeline.project.slug >>/release
           filters:
             branches:
               ignore: /.*/
