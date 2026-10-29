@@ -64,18 +64,19 @@ jobs:
                 --upload-file "$f" \
                 "${NEXUS_URL}/repository/generic-local/hnvm/${CIRCLE_TAG}/$(basename "$f")"
             done
+      # Shims running from a checkout that isn't on a tag (e.g. master) read this to find the latest release
+      # when HNVM_RELEASE_DIST points at the mirror. A release for an older line doesn't move it backwards.
       - run:
-          name: Point the bootstrap shims at this release
+          name: Mark the latest release in Nexus
           command: |
-            git config user.name "hnvm release"
-            git config user.email "hnvm-release@users.noreply.github.com"
-            git fetch origin master
-            git checkout -B master origin/master
-            echo "${CIRCLE_TAG#v}" > lib/hnvm/bootstrap-version
-            # A rerun after this already landed has nothing to commit; let it reach `publish`
-            if git diff --quiet; then exit 0; fi
-            git commit -am "chore: Bootstrap hnvm ${CIRCLE_TAG}"
-            git push origin master
+            base="${NEXUS_URL}/repository/generic-local/hnvm"
+            current="$(curl -fsS -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --http1.1 "${base}/latest" || true)"
+            highest="$(printf '%s\n%s\n' "${current}" "${CIRCLE_TAG#v}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)"
+            if [ "${highest}" = "${CIRCLE_TAG#v}" ]; then
+              echo "${highest}" > latest
+              curl --fail-with-body -sS -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --http1.1 \
+                --upload-file latest "${base}/latest"
+            fi
   publish:
     docker:
       - image: cimg/base:2026.10-24.04
@@ -83,6 +84,7 @@ jobs:
     steps:
       - checkout:
           path: hnvm
+      # The tarball has no .git for the shims to read a tag from, so pin the version explicitly
       - run:
           name: Point the bootstrap shims at this release
           command: echo "${CIRCLE_TAG#v}" > hnvm/lib/hnvm/bootstrap-version

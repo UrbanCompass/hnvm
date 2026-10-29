@@ -33,10 +33,17 @@ You can also use [basher](https://github.com/basherpm/basher) to install hnvm:
 basher install UrbanCompass/hnvm
 ```
 
-The scripts in `bin/` are small bootstrap shims: they run the `hnvm` binary for the version pinned
-in `lib/hnvm/bootstrap-version`, downloading it once from GitHub Releases into
-`$HNVM_PATH/.hnvm-bin/` and verifying it against the release's `checksums.txt`. Set
-`HNVM_RELEASE_DIST` to download from a mirror instead.
+The scripts in `bin/` are small bootstrap shims: they run the `hnvm` binary from a GitHub release,
+downloading it once into `$HNVM_PATH/.hnvm-bin/` and verifying it against the release's
+`checksums.txt`. Set `HNVM_RELEASE_DIST` to download from a mirror instead.
+
+Which release depends on how you installed:
+
+- Homebrew runs the release it installed.
+- `basher install UrbanCompass/hnvm@vX.Y.Z` runs release `vX.Y.Z`.
+- Any other checkout, such as `master`, runs the latest release, rechecked at most once an hour. That
+  binary can be older than the code on `master`; build it yourself (see [From source](#from-source))
+  to run unreleased changes.
 
 ### Release binary
 

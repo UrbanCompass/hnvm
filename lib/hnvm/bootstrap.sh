@@ -6,8 +6,13 @@
 #   1. $HNVM_GO_BIN                      development and tests
 #   2. <repo>/dist/hnvm                  a local `go build`, or a release tarball layout
 #   3. $HNVM_PATH/.hnvm-bin/<ver>/hnvm   cached download
-#   4. download hnvm_<os>_<arch>.tar.gz for lib/hnvm/bootstrap-version from
+#   4. download hnvm_<os>_<arch>.tar.gz from
 #      ${HNVM_RELEASE_DIST:-https://github.com/UrbanCompass/hnvm/releases/download}, verified against checksums.txt
+#
+# The version downloaded is, in order:
+#   1. lib/hnvm/bootstrap-version        written into the release source tarball (Homebrew) by CI
+#   2. the vX.Y.Z tag the checkout is on a basher install pinned to a tag
+#   3. the latest release                anything else (e.g. master), rechecked at most hourly
 
 hnvm_bootstrap_fail() {
   echo "hnvm: $*" >&2
@@ -73,6 +78,42 @@ hnvm_bootstrap_download() {
   rm -rf "${tmp}"
 }
 
+# Prints the highest vX.Y.Z tag on HEAD of the checkout at $1, without the v, if there is one.
+hnvm_bootstrap_tag_version() {
+  [ -e "$1/.git" ] && command -v git > /dev/null 2>&1 || return 0
+  git -C "$1" tag --points-at HEAD 2> /dev/null | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' |
+    sed 's/^v//' | sort -t . -k 1,1n -k 2,2n -k 3,3n | tail -n 1
+}
+
+# Prints the latest release's version. The answer is cached for an hour; when the lookup fails a stale
+# cached answer is used rather than failing.
+hnvm_bootstrap_latest_version() {
+  local cache="${HNVM_PATH}/.hnvm-bin/latest" version=
+
+  if [ -s "${cache}" ] && [ -n "$(find "${cache}" -mmin -60 2> /dev/null)" ]; then
+    tr -d '[:space:]' < "${cache}"
+    return
+  fi
+
+  if [ -n "${HNVM_RELEASE_DIST:-}" ]; then
+    # Mirrors publish the latest version as a plain text file next to the release directories
+    version="$(curl -fsSL "${HNVM_RELEASE_DIST}/latest" 2> /dev/null | tr -d '[:space:]')"
+  else
+    # GitHub redirects releases/latest to releases/tag/vX.Y.Z
+    version="$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/UrbanCompass/hnvm/releases/latest 2> /dev/null)"
+    version="${version##*/v}"
+  fi
+
+  if echo "${version}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    mkdir -p "${HNVM_PATH}/.hnvm-bin" && echo "${version}" > "${cache}.$$" && mv -f "${cache}.$$" "${cache}"
+    echo "${version}"
+  elif [ -s "${cache}" ]; then
+    tr -d '[:space:]' < "${cache}"
+  else
+    hnvm_bootstrap_fail "could not look up the latest hnvm release"
+  fi
+}
+
 hnvm_bootstrap_exec() {
   local script_dir="$1" tool="$2"
   shift 2
@@ -85,7 +126,12 @@ hnvm_bootstrap_exec() {
   elif [ -x "${script_dir}/../dist/hnvm" ]; then
     bin="${script_dir}/../dist/hnvm"
   else
-    version="$(tr -d '[:space:]' < "${script_dir}/../lib/hnvm/bootstrap-version")"
+    if [ -s "${script_dir}/../lib/hnvm/bootstrap-version" ]; then
+      version="$(tr -d '[:space:]' < "${script_dir}/../lib/hnvm/bootstrap-version")"
+    else
+      version="$(hnvm_bootstrap_tag_version "${script_dir}/..")"
+      [ -n "${version}" ] || version="$(hnvm_bootstrap_latest_version)" || exit 1
+    fi
     bin="${HNVM_PATH}/.hnvm-bin/${version}/hnvm"
     [ -x "${bin}" ] || hnvm_bootstrap_download "${version}" "${HNVM_PATH}/.hnvm-bin/${version}"
   fi
