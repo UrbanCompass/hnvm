@@ -11,13 +11,16 @@ workflows:
           dir: '.'
   publish:
     jobs:
-      - publish:
+      - release:
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /^v\d+\.\d+\.\d+/
-      - release:
+      # The Homebrew formula installs this source tarball, whose bin/* download the binaries `release` uploads
+      - publish:
+          requires:
+            - release
           filters:
             branches:
               ignore: /.*/
@@ -78,6 +81,9 @@ jobs:
     steps:
       - checkout:
           path: hnvm
+      - run:
+          name: Point the bootstrap shims at this release
+          command: echo "${CIRCLE_TAG#v}" > hnvm/lib/hnvm/bootstrap-version
       - run:
           name: Create hnvm gzip artifact
           command: |

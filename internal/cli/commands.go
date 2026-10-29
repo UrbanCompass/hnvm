@@ -282,6 +282,10 @@ func (c PruneCmd) Run(g *Globals) error {
 		if spec := s.Cfg.Get(versionKey(tool)); spec != "" {
 			if res, err := s.Res.Quiet(context.Background(), tool, spec); err == nil {
 				keep[tool+"@"+res.Version] = true
+				// The minimum safe version policy may run a newer node than the one configured.
+				if tool == "node" {
+					keep[tool+"@"+minSafe(s, res.Version)] = true
+				}
 			}
 		}
 	}
@@ -370,9 +374,9 @@ func installed(root, tool, version string) bool {
 	case "node":
 		return fileExists(filepath.Join(root, "node", version, "bin", "node"))
 	case "pnpm":
-		return fileExists(install.PnpmBin(root, version, "pnpm"))
+		return install.PnpmInstalled(root, version)
 	case "yarn":
-		return fileExists(install.YarnBin(root, version))
+		return install.YarnInstalled(root, version)
 	case "bun":
 		return fileExists(install.BunBin(root, version))
 	}

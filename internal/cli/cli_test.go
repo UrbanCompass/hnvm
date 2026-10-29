@@ -104,6 +104,20 @@ func TestListUninstallPrune(t *testing.T) {
 	}
 }
 
+// With the default min-safe policy, a 22.1.0 pin runs 22.23.4, so that is what prune must keep.
+func TestPruneKeepsMinSafeNode(t *testing.T) {
+	root := project(t, `{"engines":{"node":"22.1.0"}}`)
+	for _, v := range []string{"22.1.0", "22.23.4"} {
+		bin := filepath.Join(root, "node", v, "bin", "node")
+		os.MkdirAll(filepath.Dir(bin), 0o755)
+		os.WriteFile(bin, nil, 0o755)
+	}
+	code, out, errOut := runCLI(t, "prune", "--keep-used-days=-1", "--dry-run")
+	if code != 0 || strings.Contains(out, "22.23.4") {
+		t.Fatalf("prune: code %d\n%s\n%s", code, out, errOut)
+	}
+}
+
 func TestShims(t *testing.T) {
 	dir := t.TempDir()
 	if code, _, errOut := runCLI(t, "shims", dir); code != 0 {

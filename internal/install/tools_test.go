@@ -115,6 +115,54 @@ func TestEnsurePnpm(t *testing.T) {
 	}
 }
 
+// Bash 1.x extracted in place, so a pnpm or yarn directory with the entry script but no completion
+// marker may be missing its dependencies. It is reinstalled.
+func TestEnsureRepairsUnmarkedInstalls(t *testing.T) {
+	yarnTarball := tarGz(t, "yarn-v1.22.19/", map[string]string{"bin/yarn.js": "// yarn"})
+	pnpmTarball := tarGz(t, "package/", map[string]string{"bin/pnpm.cjs": "// pnpm"})
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/1.22.19/yarn-v1.22.19.tar.gz":
+			w.Write(yarnTarball)
+		case "/pnpm/8.15.0":
+			fmt.Fprintf(w, `{"dist":{"tarball":%q}}`, srv.URL+"/pnpm/-/pnpm-8.15.0.tgz")
+		case "/pnpm/-/pnpm-8.15.0.tgz":
+			w.Write(pnpmTarball)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	e := newEnv(t, srv)
+
+	partial := func(p string) {
+		os.MkdirAll(filepath.Dir(p), 0o755)
+		os.WriteFile(p, []byte("// partial"), 0o644)
+	}
+	partial(YarnBin(e.Root, "1.22.19"))
+	partial(filepath.Join(PnpmDir(e.Root, "8.15.0"), "bin", "pnpm.cjs"))
+	if YarnInstalled(e.Root, "1.22.19") || PnpmInstalled(e.Root, "8.15.0") {
+		t.Fatal("an unmarked install counts as complete")
+	}
+
+	if err := e.EnsureYarn(context.Background(), "1.22.19", srv.URL); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.EnsurePnpm(context.Background(), "8.15.0", srv.URL); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := os.ReadFile(YarnBin(e.Root, "1.22.19")); string(got) != "// yarn" {
+		t.Errorf("yarn.js = %q, want the reinstalled file", got)
+	}
+	if got, _ := os.ReadFile(PnpmBin(e.Root, "8.15.0", "pnpm")); string(got) != "// pnpm" {
+		t.Errorf("pnpm.cjs = %q, want the reinstalled file", got)
+	}
+	if !YarnInstalled(e.Root, "1.22.19") || !PnpmInstalled(e.Root, "8.15.0") {
+		t.Error("a fresh install is not marked complete")
+	}
+}
+
 func TestPnpmBinLayouts(t *testing.T) {
 	for _, rel := range []string{"bin/pnpm.cjs", "bin/pnpm.js", "lib/bin/pnpm.js"} {
 		root := t.TempDir()

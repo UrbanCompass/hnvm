@@ -14,8 +14,24 @@ import (
 	"time"
 )
 
-// Installs become visible with one rename, so the presence of the entry point means the install is
-// complete. (Bash ran the tool to compare versions on every call, because it extracted in place.)
+// Installs become visible with one rename, so they are complete once present. Bash extracted pnpm and
+// yarn in place and ran them on every call to check, so a pnpm or yarn directory also needs the marker
+// the Go installer writes before the rename: a bash install may have stopped part way.
+const completeMarker = ".hnvm-complete"
+
+func markComplete(dir string) error {
+	return os.WriteFile(filepath.Join(dir, completeMarker), nil, 0o644)
+}
+
+// YarnInstalled reports whether yarn version is completely installed.
+func YarnInstalled(root, version string) bool {
+	return exists(YarnBin(root, version)) && exists(filepath.Join(YarnDir(root, version), completeMarker))
+}
+
+// PnpmInstalled reports whether pnpm version is completely installed.
+func PnpmInstalled(root, version string) bool {
+	return exists(PnpmBin(root, version, "pnpm")) && exists(filepath.Join(PnpmDir(root, version), completeMarker))
+}
 
 // YarnDir is $HNVM_PATH/yarn/<version>.
 func YarnDir(root, version string) string { return filepath.Join(root, "yarn", version) }
@@ -27,7 +43,7 @@ func YarnBin(root, version string) string {
 
 // EnsureYarn installs yarn from {dist}/{version}/yarn-v{version}.tar.gz.
 func (e *Env) EnsureYarn(ctx context.Context, version, dist string) error {
-	done := func() bool { return exists(YarnBin(e.Root, version)) }
+	done := func() bool { return YarnInstalled(e.Root, version) }
 	if done() {
 		return nil
 	}
@@ -48,7 +64,7 @@ func (e *Env) EnsureYarn(ctx context.Context, version, dist string) error {
 		if !exists(filepath.Join(tmp, "bin", "yarn.js")) {
 			return fmt.Errorf("%s did not contain bin/yarn.js", url)
 		}
-		return nil
+		return markComplete(tmp)
 	})
 }
 
@@ -70,7 +86,7 @@ func PnpmBin(root, version, name string) string {
 // This replaces the vendored pnpm self-installer, and checks the tarball against the packument's
 // sha512 integrity.
 func (e *Env) EnsurePnpm(ctx context.Context, version, registry string) error {
-	done := func() bool { return exists(PnpmBin(e.Root, version, "pnpm")) }
+	done := func() bool { return PnpmInstalled(e.Root, version) }
 	if done() {
 		return nil
 	}
@@ -116,7 +132,7 @@ func (e *Env) EnsurePnpm(ctx context.Context, version, registry string) error {
 		if err := extractTarGz(archive, tmp, 1); err != nil {
 			return fmt.Errorf("extracting %s: %w", tarball, err)
 		}
-		return nil
+		return markComplete(tmp)
 	})
 }
 

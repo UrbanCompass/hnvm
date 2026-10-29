@@ -53,11 +53,13 @@ func extractTarGz(r io.Reader, dest string, strip int) error {
 	if err != nil {
 		return err
 	}
+	// Symlinks are created only after every file is written, so no write can go through one.
+	var links []*tar.Header
 	tr := tar.NewReader(gz)
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
-			return nil
+			return createLinks(root, links, strip)
 		}
 		if err != nil {
 			return err
@@ -80,20 +82,73 @@ func extractTarGz(r io.Reader, dest string, strip int) error {
 				return err
 			}
 		case tar.TypeSymlink:
-			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-				return err
-			}
-			// Node's npm/npx are relative symlinks into lib/node_modules. Reject ones that escape.
-			resolved := filepath.Join(filepath.Dir(target), hdr.Linkname)
-			if filepath.IsAbs(hdr.Linkname) || !strings.HasPrefix(resolved, root+string(filepath.Separator)) {
-				return fmt.Errorf("unsafe symlink in archive: %q -> %q", hdr.Name, hdr.Linkname)
-			}
-			os.Remove(target)
-			if err := os.Symlink(hdr.Linkname, target); err != nil {
-				return err
-			}
+			links = append(links, hdr)
 		}
 	}
+}
+
+// createLinks creates the archive's symlinks, then checks that each one, followed through any
+// other links on the way, stays under root. Node's npm/npx are relative symlinks into lib/node_modules.
+func createLinks(root string, links []*tar.Header, strip int) error {
+	var targets []string
+	for _, hdr := range links {
+		target, _, _ := safeJoin(root, hdr.Name, strip)
+		if filepath.IsAbs(hdr.Linkname) {
+			return fmt.Errorf("unsafe symlink in archive: %q -> %q", hdr.Name, hdr.Linkname)
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+			return err
+		}
+		os.Remove(target)
+		if err := os.Symlink(hdr.Linkname, target); err != nil {
+			return err
+		}
+		targets = append(targets, target)
+	}
+	for i, target := range targets {
+		rel, err := filepath.Rel(root, target)
+		if err != nil {
+			return err
+		}
+		if !staysUnder(root, rel) {
+			return fmt.Errorf("unsafe symlink in archive: %q -> %q", links[i].Name, links[i].Linkname)
+		}
+	}
+	return nil
+}
+
+// staysUnder resolves rel against root one component at a time, following symlinks, and reports
+// whether every step stays under root. Components that don't exist are fine; they can't redirect.
+func staysUnder(root, rel string) bool {
+	cur := root
+	queue := strings.Split(rel, string(filepath.Separator))
+	for hops := 0; len(queue) > 0; {
+		c := queue[0]
+		queue = queue[1:]
+		switch c {
+		case "", ".":
+			continue
+		case "..":
+			if cur == root {
+				return false
+			}
+			cur = filepath.Dir(cur)
+			continue
+		}
+		next := filepath.Join(cur, c)
+		if fi, err := os.Lstat(next); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+			dest, err := os.Readlink(next)
+			if err != nil || filepath.IsAbs(dest) || hops >= 40 {
+				return false
+			}
+			hops++
+			// A relative link target is relative to the directory holding the link, which is cur.
+			queue = append(strings.Split(filepath.FromSlash(dest), string(filepath.Separator)), queue...)
+			continue
+		}
+		cur = next
+	}
+	return true
 }
 
 // extractZipFile copies the single entry named `name` out of the zip at path into target.

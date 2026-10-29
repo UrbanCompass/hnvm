@@ -122,3 +122,77 @@ func TestExtractRejectsTraversal(t *testing.T) {
 		t.Fatal("expected traversal to be rejected")
 	}
 }
+
+// Each link passes a lexical check on its own, but b resolves through sub/a to a sibling of dest.
+func TestExtractRejectsChainedSymlinkEscape(t *testing.T) {
+	parent := t.TempDir()
+	dest := filepath.Join(parent, "dest")
+	outside := filepath.Join(parent, "outside")
+	for _, dir := range []string{dest, outside} {
+		if err := os.Mkdir(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gz)
+	for _, h := range []*tar.Header{
+		{Name: "top/other/", Typeflag: tar.TypeDir, Mode: 0o755},
+		{Name: "top/sub/a", Typeflag: tar.TypeSymlink, Linkname: "../other"},
+		{Name: "top/b", Typeflag: tar.TypeSymlink, Linkname: "sub/a/../../outside"},
+	} {
+		tw.WriteHeader(h)
+	}
+	tw.Close()
+	gz.Close()
+
+	if err := extractTarGz(&buf, dest, 1); err == nil {
+		t.Fatal("expected the escaping symlink to be rejected")
+	}
+}
+
+func TestExtractKeepsInternalSymlinks(t *testing.T) {
+	dest := t.TempDir()
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gz)
+	for _, h := range []*tar.Header{
+		{Name: "top/lib/", Typeflag: tar.TypeDir, Mode: 0o755},
+		{Name: "top/sub/a", Typeflag: tar.TypeSymlink, Linkname: "../lib"},
+		{Name: "top/bin/npm", Typeflag: tar.TypeSymlink, Linkname: "../sub/a/../lib/npm-cli.js"},
+	} {
+		tw.WriteHeader(h)
+	}
+	tw.Close()
+	gz.Close()
+
+	if err := extractTarGz(&buf, dest, 1); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := os.Readlink(filepath.Join(dest, "bin", "npm")); got != "../sub/a/../lib/npm-cli.js" {
+		t.Errorf("bin/npm -> %q", got)
+	}
+}
+
+// A regular file entry must not be written through a symlink the archive created earlier.
+func TestExtractRejectsWritesThroughSymlinks(t *testing.T) {
+	dest := t.TempDir()
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gz)
+	for _, h := range []*tar.Header{
+		{Name: "top/lib/", Typeflag: tar.TypeDir, Mode: 0o755},
+		{Name: "top/link", Typeflag: tar.TypeSymlink, Linkname: "lib"},
+		{Name: "top/link/file", Typeflag: tar.TypeReg, Mode: 0o644, Size: 1},
+	} {
+		tw.WriteHeader(h)
+	}
+	tw.Write([]byte("x"))
+	tw.Close()
+	gz.Close()
+
+	if err := extractTarGz(&buf, dest, 1); err == nil {
+		t.Fatal("expected a write through a symlink to be rejected")
+	}
+}

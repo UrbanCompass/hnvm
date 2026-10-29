@@ -20,9 +20,11 @@ func registry(t *testing.T, hits *atomic.Int32) *httptest.Server {
 		hits.Add(1)
 		switch r.URL.Path {
 		case "/tool":
-			w.Write([]byte(`{"dist-tags":{"latest":"2.1.0","next":"3.0.0"},"versions":{"1.2.3":{},"1.9.0":{},"2.1.0":{},"3.0.0":{}}}`))
+			w.Write([]byte(`{"dist-tags":{"latest":"2.1.0","next":"3.0.0"},"versions":{"1.2.3":{},"1.9.0":{},"2.1.0":{},"3.0.0":{},"4.0.0-rc.1":{}}}`))
 		case "/tool/latest":
 			w.Write([]byte(`{"version":"2.1.0"}`))
+		case "/tool/rc":
+			w.Write([]byte(`{"version":"4.0.0-rc.1"}`))
 		default:
 			http.Error(w, "nope", http.StatusMethodNotAllowed)
 		}
@@ -46,6 +48,9 @@ func TestResolve(t *testing.T) {
 		{"^1.0.0", "1.9.0", "range"},
 		{">=1 <2.1", "1.9.0", "range"},
 		{"next", "3.0.0", "dist-tag"},
+		{"4.0.0-rc.1", "4.0.0-rc.1", "exact"},
+		{"rc", "4.0.0-rc.1", "registry"},
+		{">=4.0.0-rc.0", "4.0.0-rc.1", "range"},
 	} {
 		t.Run(tc.spec, func(t *testing.T) {
 			r := newResolver(t, srv)

@@ -28,11 +28,15 @@ import (
 // DefaultRegistry is where versions are resolved, as in bash (HNVM_PNPM_REGISTRY only affects pnpm downloads).
 const DefaultRegistry = "https://registry.npmjs.org"
 
-var exact = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+$`)
 var unsafeChars = regexp.MustCompile(`[^a-z0-9_]`)
 
-// IsExact reports whether v is a plain MAJOR.MINOR.PATCH version.
-func IsExact(v string) bool { return exact.MatchString(v) }
+// IsExact reports whether v is a complete version such as 22.1.0 or 18.0.0-rc.1, as written by
+// the registry: no "v" prefix or surrounding whitespace. Such strings only contain [0-9A-Za-z.+-],
+// so they are safe as directory names.
+func IsExact(v string) bool {
+	_, err := semver.Parse(v)
+	return err == nil && v != "" && v[0] >= '0' && v[0] <= '9'
+}
 
 // Resolver resolves versions for one invocation.
 type Resolver struct {
