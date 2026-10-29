@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
+#
+# Runs the hnvm binary as `pnpx` (see lib/hnvm/bootstrap.sh).
 
 set -e
-
-node_bin=
-pnpx_bin=
 
 # The exposed bin files are symlinked into the user's $PATH, so we need to make our way back to
 # the original path location to understand where the rest of this package's files are installed
@@ -16,6 +15,5 @@ done
 script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 
 # shellcheck source=/dev/null
-source "$script_dir/../lib/hnvm/ensure_bin.sh"
-
-exec "${node_bin}" "${pnpx_bin}" "$@"
+source "$script_dir/../lib/hnvm/bootstrap.sh"
+hnvm_bootstrap_exec "$script_dir" "pnpx" "$@"

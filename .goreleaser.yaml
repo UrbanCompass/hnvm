@@ -1,0 +1,38 @@
+# Builds the release archives the bootstrap shims (lib/hnvm/bootstrap.sh) download:
+# hnvm_<os>_<arch>.tar.gz containing the `hnvm` binary at the top level, plus checksums.txt.
+version: 2
+project_name: hnvm
+# dist/ holds the local development binary (dist/hnvm) the bootstrap shims look for
+dist: .goreleaser-dist
+
+builds:
+  - main: ./cmd/hnvm
+    binary: hnvm
+    env:
+      - CGO_ENABLED=0
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "hnvm_{{ .Os }}_{{ .Arch }}"
+    files:
+      - none*
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+# The binary's version is the project's: semver-release-manager publishes the vX.Y.Z GitHub release, and the tag
+# drives {{ .Version }} above. The archives are attached to that release, keeping its notes.
+release:
+  github:
+    owner: UrbanCompass
+    name: hnvm
+  mode: keep-existing
+
+changelog:
+  disable: true

@@ -4,29 +4,81 @@ orbs:
 workflows:
   ci:
     jobs:
-      - integration
+      - go-test
+      # The jest suite against the Go binary: bin/* run dist/hnvm when it exists
+      - parity
       - shellcheck/check:
           dir: '.'
   publish:
     jobs:
+      - release:
+          # One release at a time, so overlapping tags can't race on the Nexus `latest` read-compare-upload
+          serial-group: << pipeline.project.slug >>/release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+/
+      # The Homebrew formula installs this source tarball, whose bin/* download the binaries `release` uploads
       - publish:
+          requires:
+            - release
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /^v\d+\.\d+\.\d+/
 jobs:
-  integration:
+  go-test:
     docker:
-      - image: circleci/node:14.18-buster
+      - image: cimg/go:1.24
     steps:
       - checkout
+      - run: go vet ./...
+      - run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - run: go test -race ./...
+  parity:
+    docker:
+      - image: cimg/go:1.24-node
+    steps:
+      - checkout
+      - run: go build -o dist/hnvm ./cmd/hnvm
       - run:
           command: npm install
           working_directory: ./test
       - run:
           command: npm test
           working_directory: ./test
+  release:
+    docker:
+      - image: cimg/go:1.24
+    steps:
+      - checkout
+      - run:
+          name: Publish binaries to GitHub Releases
+          command: |
+            curl -sfL https://goreleaser.com/static/run | VERSION=v2.12.0 bash -s -- release --clean
+      - run:
+          name: Mirror binaries to Nexus
+          command: |
+            for f in .goreleaser-dist/hnvm_*.tar.gz .goreleaser-dist/checksums.txt; do
+              curl --fail-with-body -sS -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --http1.1 \
+                --upload-file "$f" \
+                "${NEXUS_URL}/repository/generic-local/hnvm/${CIRCLE_TAG}/$(basename "$f")"
+            done
+      # Shims running from a checkout that isn't on a tag (e.g. master) read this to find the latest release
+      # when HNVM_RELEASE_DIST points at the mirror. A release for an older line doesn't move it backwards.
+      - run:
+          name: Mark the latest release in Nexus
+          command: |
+            base="${NEXUS_URL}/repository/generic-local/hnvm"
+            current="$(curl -fsS -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --http1.1 "${base}/latest" || true)"
+            highest="$(printf '%s\n%s\n' "${current}" "${CIRCLE_TAG#v}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)"
+            if [ "${highest}" = "${CIRCLE_TAG#v}" ]; then
+              echo "${highest}" > latest
+              curl --fail-with-body -sS -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --http1.1 \
+                --upload-file latest "${base}/latest"
+            fi
   publish:
     docker:
       - image: cimg/base:2026.10-24.04
@@ -34,6 +86,10 @@ jobs:
     steps:
       - checkout:
           path: hnvm
+      # The tarball has no .git for the shims to read a tag from, so pin the version explicitly
+      - run:
+          name: Point the bootstrap shims at this release
+          command: echo "${CIRCLE_TAG#v}" > hnvm/lib/hnvm/bootstrap-version
       - run:
           name: Create hnvm gzip artifact
           command: |

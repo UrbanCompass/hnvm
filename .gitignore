@@ -2,3 +2,7 @@
 .tmp
 .DS_Store
 test/node_modules/
+dist/
+.goreleaser-dist/
+# Written into the release source tarball by CI; see lib/hnvm/bootstrap.sh
+lib/hnvm/bootstrap-version

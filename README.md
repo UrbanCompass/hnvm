@@ -33,26 +33,54 @@ You can also use [basher](https://github.com/basherpm/basher) to install hnvm:
 basher install UrbanCompass/hnvm
 ```
 
-This will install both `hnvm` and `jq`.
+The scripts in `bin/` are small bootstrap shims: they run the `hnvm` binary from a GitHub release,
+downloading it once into `$HNVM_PATH/.hnvm-bin/` and verifying it against the release's
+`checksums.txt`. Set `HNVM_RELEASE_DIST` to download from a mirror instead.
 
-### Manual install script
+Which release depends on how you installed:
 
-If you can't or don't want to install using `homebrew` or `basher`, you can use the provided
-`install.sh` and `uninstall.sh` scripts to add or remove the local bin path to your global $PATH:
+- Homebrew runs the release it installed.
+- `basher install UrbanCompass/hnvm@vX.Y.Z` runs release `vX.Y.Z`.
+- Any other checkout, such as `master`, runs the latest release, rechecked at most once an hour. That
+  binary can be older than the code on `master`; build it yourself (see [From source](#from-source))
+  to run unreleased changes.
+
+### Release binary
+
+Download `hnvm_<os>_<arch>.tar.gz` from the [releases](https://github.com/UrbanCompass/hnvm/releases),
+put `hnvm` somewhere permanent, and create the tool symlinks in a directory on your `$PATH`:
 
 ```sh
-source install.sh
-node -v # Uses hnvm node script to get the node version
-
-source uninstall.sh
-node -v # No longer uses hnvm node script
+hnvm shims ~/.local/bin   # creates node, npm, npx, pnpm, pnpx, yarn, bun and bunx
 ```
 
-Note that `hnvm` depends on [`jq`](https://stedolan.github.io/jq/) being available in your global
-`$PATH`. If you don't install hnvm via `brew` or `basher`, you'll have to make sure that `jq` is installed on your own.
+### From source
 
-Managing `bun` additionally requires `unzip` (bun is distributed as a `.zip` archive). This is
-present by default on macOS and most Linux distributions.
+```sh
+make build       # builds dist/hnvm, which the scripts in bin/ use
+source install.sh
+node -v # Uses hnvm
+
+source uninstall.sh
+node -v # No longer uses hnvm
+```
+
+HNVM is a single static binary with no runtime dependencies (no `jq`, `curl`, `tar` or `unzip`).
+
+## The `hnvm` command
+
+| Command | |
+|---|---|
+| `hnvm current [tool...]` | The version of each tool here, and which setting decided it (`package.json`, an `.hnvmrc`, the environment, min-safe-node) |
+| `hnvm which <tool>` | The file a tool runs |
+| `hnvm config [--json]` | Every setting with its value and source, including managed (MDM) values |
+| `hnvm install [tool[@version]...]` | Download ahead of time, e.g. to warm a CI cache |
+| `hnvm list` | Installed versions and when they were last used |
+| `hnvm uninstall <tool@version>...` | Remove versions |
+| `hnvm prune [--keep-used-days N] [-n]` | Remove versions not used recently (never the ones configured here) |
+| `hnvm exec <tool> [args...]` | Run a tool without relying on the shims being on `PATH` |
+| `hnvm doctor [--json] [--offline]` | Check `PATH` shadowing (nvm, volta, brew), `HNVM_PATH`, installs, certificates and reachability; exits non-zero on failure |
+| `hnvm shims [dir]` | Create the tool symlinks |
 
 ## Usage
 
@@ -81,13 +109,15 @@ node main.js # Echo's: "Node version v12.10.0
 
 HNVM reads its configuration from one of the following places, in order from highest to lowest
 priority:
+1. Environment variables (`HNVM_NODE=20.1.0 node -v`)
 1. The `package.json` file in the current process working directory (`$PWD/package.json`)
 2. An `.hnvmrc` file in the `PWD` (`$PWD/.hnvmrc`)
 3. An `.hnvmrc` file at the root of your git repo (if running in a git repo)
 4. An `.hnvmrc` file in your home directory (`~/.hnvmrc`)
 5. The `.hnvmrc` file that ships with the current version of HNVM
 
-The `.hnvmrc` files are all simple key/value pairs prepended with `HNVM_`:
+The `.hnvmrc` files are all simple `KEY=VALUE` lines prepended with `HNVM_` (`#` starts a comment,
+and other keys are ignored):
 ```sh
 HNVM_PATH=/path/to/.hnvm
 HNVM_NODE=10.0.0
@@ -327,8 +357,14 @@ Because `nvm` doesn't support [`fish`](https://fish.sh) 😅. This project also 
 projects or packages declaring versions of node to use, as opposed to switching globally between
 different versions. It results in a simpler setup with far less code.
 
+## Development
+
+HNVM is written in Go. `make test` runs the unit tests (offline), `make lint` runs `go vet`, `gofmt`
+and `shellcheck`, and `make build` builds `dist/hnvm`.
+
 ### Integration Tests
 
 NOTE: The tests hit live npm registry servers and go through the process of downloading multiple copies of node. Do not run in bandwidth-constrained environments!
 
-Tests for HNVM are written with [jest](https://jestjs.io/) and require node 14.4.0 or higher (protip: use hnvm to test hnvm 😉). To run the tests, `cd test/ && npm install && npm test`
+Tests for HNVM are written with [jest](https://jestjs.io/) and require node 14.4.0 or higher (protip: use hnvm to test hnvm 😉). To run the tests, `cd test/ && npm install && npm test`.
+Run `make build` first: the tests run `bin/*`, which use the Go binary in `dist/hnvm`.

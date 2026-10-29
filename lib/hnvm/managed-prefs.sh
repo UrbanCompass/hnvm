@@ -39,7 +39,7 @@ function managed_pref_list() {
 # HNVM_DISTRUST_CERTS_EXTRA: managed fingerprints are always removed, and the user's are added on top (distrusting more roots
 # only makes their own node stricter). Sets distrust_certs_managed, distrust_certs_extra_managed and
 # distrust_certs_strict_managed to true for the keys the profile sets, so messages don't suggest a setting the user cannot change.
-# shellcheck disable=SC2034 # read by ensure_bin.sh
+# shellcheck disable=SC2034 # read by callers
 function apply_managed_distrust_certs() {
   local managed
 
