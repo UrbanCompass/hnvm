@@ -61,6 +61,11 @@ func NewSession(out *output.Output) (*Session, error) {
 	}, nil
 }
 
+// SetOutput redirects every message of the session, including the resolver's and installers'.
+func (s *Session) SetOutput(out *output.Output) {
+	s.Out, s.Res.Out, s.Inst.Out = out, out, out
+}
+
 // Root is $HNVM_PATH.
 func (s *Session) Root() string { return s.Cfg.Get("HNVM_PATH") }
 

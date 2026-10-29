@@ -100,13 +100,17 @@ func (c WhichCmd) Run(g *Globals) error {
 	if err != nil {
 		return err
 	}
-	s.Out = quietOut()
+	s.SetOutput(quietOut())
 	argv, err := s.Command(context.Background(), c.Tool, nil)
 	if err != nil {
 		return err
 	}
 	// node runs the scripts of npm, pnpm and yarn; the script is the interesting part
-	fmt.Fprintln(g.Stdout, argv[len(argv)-1])
+	path := argv[0]
+	if c.Tool != "node" && c.Tool != "bun" && c.Tool != "bunx" {
+		path = argv[1]
+	}
+	fmt.Fprintln(g.Stdout, path)
 	return nil
 }
 
@@ -312,7 +316,11 @@ type ExecCmd struct {
 }
 
 func (c ExecCmd) Run(g *Globals) error {
-	return exitCode(shim.Run(c.Tool, c.Args))
+	args := c.Args
+	if len(args) > 0 && args[0] == "--" {
+		args = args[1:]
+	}
+	return exitCode(shim.Run(c.Tool, args))
 }
 
 // ShimsCmd creates the tool symlinks.

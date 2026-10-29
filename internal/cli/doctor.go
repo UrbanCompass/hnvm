@@ -114,8 +114,8 @@ func (c DoctorCmd) Run(g *Globals) error {
 		res, err := s.Res.Quiet(ctx, "node", spec)
 		if err != nil {
 			add("node_version", "fail", "cannot resolve HNVM_NODE=%q: %s", spec, errText(err))
-		} else if raised := minSafe(s, res.Version); raised != res.Version {
-			add("node_version", "warn", "pinned %s has known vulnerabilities; hnvm runs %s instead (pin it to silence this)", res.Version, raised)
+		} else if r := s.MinSafe(res.Version); r.Notice != "" {
+			add("node_version", "warn", "%s", r.Notice)
 		} else {
 			add("node_version", "ok", "%s", res.Version)
 		}

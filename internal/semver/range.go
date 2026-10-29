@@ -84,7 +84,7 @@ func MaxSatisfying(versions []string, rng string) (string, bool) {
 	var bestV Version
 	found := false
 	for _, s := range versions {
-		v, err := parseVersion(s, true)
+		v, err := parseVersion(s)
 		if err != nil || !r.Satisfies(v) {
 			continue
 		}
@@ -104,7 +104,7 @@ func FirstSatisfying(versions []string, rng string) (string, bool) {
 		return "", false
 	}
 	for _, s := range versions {
-		v, err := parseVersion(s, true)
+		v, err := parseVersion(s)
 		if err == nil && r.Satisfies(v) {
 			return s, true
 		}
@@ -203,7 +203,7 @@ func parseComparator(s string) (comparator, error) {
 	if m[2] == "" {
 		return comparator{op: op}, nil
 	}
-	v, err := parseVersion(m[2], false)
+	v, err := parseVersion(m[2])
 	if err != nil {
 		return comparator{}, err
 	}
