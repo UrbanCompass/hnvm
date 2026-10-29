@@ -57,7 +57,8 @@ func (r *Resolver) Resolve(ctx context.Context, name, spec string) (Result, erro
 	if err != nil {
 		return res, err
 	}
-	r.Out.Info(`Resolved %s "%s" to %s`, name, spec, res.Version)
+	// No quotes: bash's """Resolved $name ""${initial_ver}"" to ..."" was only string concatenation
+	r.Out.Info(`Resolved %s %s to %s`, name, spec, res.Version)
 	return res, nil
 }
 

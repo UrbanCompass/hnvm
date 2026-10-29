@@ -100,7 +100,7 @@ func (c WhichCmd) Run(g *Globals) error {
 	if err != nil {
 		return err
 	}
-	s.Out = quietOut(s)
+	s.Out = quietOut()
 	argv, err := s.Command(context.Background(), c.Tool, nil)
 	if err != nil {
 		return err
@@ -354,15 +354,7 @@ func (c ShimsCmd) Run(g *Globals) error {
 }
 
 func minSafe(s *shim.Session, version string) string {
-	saved := s.Out
-	s.Out = quietOut(s)
-	defer func() { s.Out = saved }()
-	s.Cfg.Override("HNVM_NODE", version)
-	v, _, err := s.NodeVersion(context.Background())
-	if err != nil {
-		return version
-	}
-	return v
+	return s.MinSafe(version).Version
 }
 
 func installed(root, tool, version string) bool {

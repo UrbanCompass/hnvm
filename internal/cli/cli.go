@@ -47,7 +47,6 @@ func run(version string, args []string, stdout, stderr io.Writer) int {
 	parser, err := kong.New(&cli,
 		kong.Name("hnvm"),
 		kong.Description("Hermetic Node Version Manager: hermetic node, npm, pnpm, yarn and bun versions per project."),
-		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Compact: true}),
 		kong.Writers(stdout, stderr),
 		kong.Exit(func(code int) { exit = code; panic(exitPanic{}) }),
@@ -58,24 +57,20 @@ func run(version string, args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	code, done := parse(parser, args, &exit)
-	if done {
-		return code
-	}
-	return code
+	return parse(parser, args, &exit)
 }
 
 type exitPanic struct{}
 
 // parse runs the selected command. kong calls Exit for --help and usage errors, which we turn
 // into a return value so tests can drive the CLI in-process.
-func parse(parser *kong.Kong, args []string, exit *int) (code int, done bool) {
+func parse(parser *kong.Kong, args []string, exit *int) (code int) {
 	defer func() {
 		if r := recover(); r != nil {
 			if _, ok := r.(exitPanic); !ok {
 				panic(r)
 			}
-			code, done = *exit, true
+			code = *exit
 		}
 	}()
 	if len(args) == 0 {
@@ -84,22 +79,19 @@ func parse(parser *kong.Kong, args []string, exit *int) (code int, done bool) {
 	ctx, err := parser.Parse(args)
 	if err != nil {
 		parser.Errorf("%s", err)
-		if errors.As(err, new(*kong.ParseError)) {
-			ctx.PrintUsage(false)
-		}
-		return 2, true
+		return 2
 	}
 	if err := ctx.Run(); err != nil {
 		var ec exitCode
 		if errors.As(err, &ec) {
-			return int(ec), true
+			return int(ec)
 		}
 		if !errors.Is(err, shim.ErrReported) {
 			fmt.Fprintf(parser.Stderr, "hnvm: %v\n", err)
 		}
-		return 1, true
+		return 1
 	}
-	return 0, true
+	return 0
 }
 
 // exitCode lets a command fail with a specific code without printing anything more.

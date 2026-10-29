@@ -121,9 +121,6 @@ func (c *Config) Lookup(key string) (Value, bool) {
 	return v, ok
 }
 
-// Override sets key for the rest of this invocation, recorded as an explicit override.
-func (c *Config) Override(key, value string) { c.values[key] = Value{value, "override"} }
-
 // Bool reports whether key is exactly "true", which is how every HNVM flag is spelled.
 func (c *Config) Bool(key string) bool { return c.Get(key) == "true" }
 

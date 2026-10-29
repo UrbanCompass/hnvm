@@ -76,16 +76,21 @@ func (s *Session) NodeVersion(ctx context.Context) (version string, notice strin
 	if err != nil {
 		return "", "", reported(err)
 	}
-	r := minsafe.Apply(res.Version, minsafe.ParseRules(hnvm.MinSafeNode), minsafe.Settings{
+	r := s.MinSafe(res.Version)
+	if r.Notice != "" {
+		s.Out.Security("%s", r.Notice)
+	}
+	return r.Version, r.Notice, nil
+}
+
+// MinSafe applies the minimum safe version policy to an exact node version, without printing.
+func (s *Session) MinSafe(version string) minsafe.Result {
+	return minsafe.Apply(version, minsafe.ParseRules(hnvm.MinSafeNode), minsafe.Settings{
 		SameLine:        s.Cfg.Get("HNVM_MIN_SAFE_NODE"),
 		CrossMajor:      s.Cfg.Get("HNVM_MIN_SAFE_NODE_MAJOR"),
 		ManagedSameLine: func() (bool, bool) { return s.Managed.Bool("HNVM_MIN_SAFE_NODE") },
 		ManagedMajor:    func() (bool, bool) { return s.Managed.Bool("HNVM_MIN_SAFE_NODE_MAJOR") },
 	})
-	if r.Notice != "" {
-		s.Out.Security("%s", r.Notice)
-	}
-	return r.Version, r.Notice, nil
 }
 
 // Node resolves, installs and secures node, returning its install directory.

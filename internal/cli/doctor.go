@@ -199,6 +199,6 @@ func mustGetwd() string {
 }
 
 // quietOut silences informational output (but not errors) for commands that print their own.
-func quietOut(s *shim.Session) *output.Output {
+func quietOut() *output.Output {
 	return output.NewWriter(nil, true)
 }
