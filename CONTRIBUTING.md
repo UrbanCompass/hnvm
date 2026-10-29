@@ -14,8 +14,7 @@ The data files HNVM embeds (`.hnvmrc`, `lib/hnvm/min-safe-node.txt`, `lib/hnvm/d
 
 # Library files
 
-The bash implementation in `lib/hnvm/*.sh` stays until the jest tests that source it directly are
-ported. The bootstrap shims fall back to it only while `lib/hnvm/bootstrap-version` is the
-unreleased placeholder `0.0.0`.
+The old bash implementation in `lib/hnvm/*.sh` is no longer run by `bin/*`. It stays only because
+some jest tests source it directly, and goes away when those tests are ported.
 
 Any library files needed by core hnvm logic should be only placed into `lib/`. The reason for this is so that the same library files can be installed in the same place on disk by our Homebrew formulas. That way, the import references are consistent for both source code/source tests and for end-user homebrew installations of hnvm.

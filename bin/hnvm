@@ -17,7 +17,3 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 # shellcheck source=/dev/null
 source "$script_dir/../lib/hnvm/bootstrap.sh"
 hnvm_bootstrap_exec "$script_dir" "hnvm" "$@"
-
-# Only reached before the first Go release, when no hnvm binary is available: the bash implementation.
-echo "hnvm: the hnvm command needs the Go binary (go build -o dist/hnvm ./cmd/hnvm)" >&2
-exit 1

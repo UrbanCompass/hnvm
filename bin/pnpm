@@ -4,9 +4,6 @@
 
 set -e
 
-node_bin=
-pnpm_bin=
-
 # The exposed bin files are symlinked into the user's $PATH, so we need to make our way back to
 # the original path location to understand where the rest of this package's files are installed
 source="${BASH_SOURCE[0]}"
@@ -20,14 +17,3 @@ script_dir="$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )"
 # shellcheck source=/dev/null
 source "$script_dir/../lib/hnvm/bootstrap.sh"
 hnvm_bootstrap_exec "$script_dir" "pnpm" "$@"
-
-# Only reached before the first Go release, when no hnvm binary is available: the bash implementation.
-# shellcheck source=/dev/null
-source "$script_dir/../lib/hnvm/ensure_bin.sh"
-
-if [[ $1 == "marie-kondo" || $1 == "kondo" || $1 == "mk" ]]; then
-  # shellcheck source=/dev/null
-  source "$script_dir/../lib/hnvm/kondo.sh" "${node_bin}" "${pnpm_bin}"
-else
-  exec "${node_bin}" "${pnpm_bin}" "$@"
-fi

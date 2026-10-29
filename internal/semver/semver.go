@@ -92,21 +92,23 @@ func jsLength(s string) int {
 
 // Parse parses a strict semantic version such as "1.2.3", "v1.2.3" or
 // "1.2.3-beta.1+build.5", following node-semver's valid(). Surrounding
-// whitespace is trimmed. A leading "=" is rejected, because node-semver only
-// accepts it as a comparator operator inside ranges. Leading zeros, numeric
-// components above 2^53-1, and strings longer than 256 UTF-16 code units are
-// also rejected.
+// whitespace, a leading "=" (only accepted as a comparator operator inside
+// ranges), leading zeros, numeric components above 2^53-1, and strings longer
+// than 256 UTF-16 code units are all rejected.
 func Parse(s string) (Version, error) {
-	return parseVersion(s)
+	return parseVersion(s, false)
 }
 
-// parseVersion checks the length of s before trimming it, as node-semver's
-// parse() does, then matches the trimmed string against the full grammar.
-func parseVersion(s string) (Version, error) {
+// parseVersion parses s. With trim set, surrounding whitespace is removed
+// first, as node-semver's SemVer constructor does when it tests a version
+// against a range. The length limit applies to the untrimmed input.
+func parseVersion(s string, trim bool) (Version, error) {
 	if jsLength(s) > maxVersionLength {
 		return Version{}, fmt.Errorf("semver: version longer than %d characters", maxVersionLength)
 	}
-	s = jsTrim(s)
+	if trim {
+		s = jsTrim(s)
+	}
 	m := reFull.FindStringSubmatch(s)
 	if m == nil {
 		return Version{}, fmt.Errorf("semver: invalid version %q", s)

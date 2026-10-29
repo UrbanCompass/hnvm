@@ -5,9 +5,7 @@ workflows:
   ci:
     jobs:
       - go-test
-      # The jest suite against the bash implementation (no Go binary available, bootstrap-version is the placeholder)
-      - integration
-      # The same, unchanged jest suite against the Go binary: bin/* run dist/hnvm when it exists
+      # The jest suite against the Go binary: bin/* run dist/hnvm when it exists
       - parity
       - shellcheck/check:
           dir: '.'
@@ -34,17 +32,6 @@ jobs:
       - run: go vet ./...
       - run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
       - run: go test -race ./...
-  integration:
-    docker:
-      - image: circleci/node:14.18-buster
-    steps:
-      - checkout
-      - run:
-          command: npm install
-          working_directory: ./test
-      - run:
-          command: npm test
-          working_directory: ./test
   parity:
     docker:
       - image: cimg/go:1.24-node

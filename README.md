@@ -360,5 +360,4 @@ and `shellcheck`, and `make build` builds `dist/hnvm`.
 NOTE: The tests hit live npm registry servers and go through the process of downloading multiple copies of node. Do not run in bandwidth-constrained environments!
 
 Tests for HNVM are written with [jest](https://jestjs.io/) and require node 14.4.0 or higher (protip: use hnvm to test hnvm 😉). To run the tests, `cd test/ && npm install && npm test`.
-After `make build` they run against the Go binary in `dist/hnvm`; without it, against the bash
-implementation that remains in `lib/hnvm/` until the tests are ported.
+Run `make build` first: the tests run `bin/*`, which use the Go binary in `dist/hnvm`.
