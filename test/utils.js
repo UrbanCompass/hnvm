@@ -6,6 +6,10 @@ const childProcess = require('child_process')
 
 const hnvmBinDir = path.join(__dirname, '../bin')
 
+// Set HNVM_GO_BIN to run the suite against a Go build of hnvm (see lib/hnvm/bootstrap.sh). Forwarded explicitly
+// because the child processes below get a minimal environment.
+const goBinEnv = process.env.HNVM_GO_BIN ? {HNVM_GO_BIN: process.env.HNVM_GO_BIN} : {}
+
 function createTestContext() {
   let testDir
   let hnvmDir
@@ -79,7 +83,7 @@ function createTestContext() {
       // this default PATH may have issues finding `jq`, which will break the test when it runs source code
       const stdout = childProcess.execFileSync(file, args, {
         encoding: 'utf-8',
-        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: outputFile, PATH: process.env.PATH, ...extraEnv},
+        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: outputFile, PATH: process.env.PATH, ...goBinEnv, ...extraEnv},
         cwd: cwdDir,
       })
 
@@ -92,7 +96,7 @@ function createTestContext() {
       // this default PATH may have issues finding `jq`, which will break the test when it runs source code
       const hnvmProcess = childProcess.spawnSync(file, args, {
         encoding: 'utf-8',
-        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: testStdoutSocket, PATH: process.env.PATH},
+        env: {HNVM_PATH: hnvmDir, HNVM_OUTPUT_DESTINATION: testStdoutSocket, PATH: process.env.PATH, ...goBinEnv},
         cwd: cwdDir,
       });
 
@@ -102,7 +106,7 @@ function createTestContext() {
       // Execute without HNVM_OUTPUT_DESTINATION so we can test default stderr behavior
       const hnvmProcess = childProcess.spawnSync(file, args, {
         encoding: 'utf-8',
-        env: {HNVM_PATH: hnvmDir, PATH: process.env.PATH, ...extraEnv},
+        env: {HNVM_PATH: hnvmDir, PATH: process.env.PATH, ...goBinEnv, ...extraEnv},
         cwd: cwdDir,
       });
 
