@@ -96,18 +96,8 @@ func jsLength(s string) int {
 // ranges), leading zeros, numeric components above 2^53-1, and strings longer
 // than 256 UTF-16 code units are all rejected.
 func Parse(s string) (Version, error) {
-	return parseVersion(s, false)
-}
-
-// parseVersion parses s. With trim set, surrounding whitespace is removed
-// first, as node-semver's SemVer constructor does when it tests a version
-// against a range. The length limit applies to the untrimmed input.
-func parseVersion(s string, trim bool) (Version, error) {
 	if jsLength(s) > maxVersionLength {
 		return Version{}, fmt.Errorf("semver: version longer than %d characters", maxVersionLength)
-	}
-	if trim {
-		s = jsTrim(s)
 	}
 	m := reFull.FindStringSubmatch(s)
 	if m == nil {
@@ -128,6 +118,16 @@ func parseVersion(s string, trim bool) (Version, error) {
 		v.Build = strings.Split(m[5], ".")
 	}
 	return v, nil
+}
+
+// parseForRange parses a version being tested against a range. Surrounding
+// whitespace is trimmed first, as node-semver's SemVer constructor does; the
+// length limit applies to the untrimmed input.
+func parseForRange(s string) (Version, error) {
+	if jsLength(s) > maxVersionLength {
+		return Version{}, fmt.Errorf("semver: version longer than %d characters", maxVersionLength)
+	}
+	return Parse(jsTrim(s))
 }
 
 // String returns "major.minor.patch", followed by "-prerelease" when the

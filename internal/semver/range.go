@@ -84,7 +84,7 @@ func MaxSatisfying(versions []string, rng string) (string, bool) {
 	var bestV Version
 	found := false
 	for _, s := range versions {
-		v, err := parseVersion(s, true)
+		v, err := parseForRange(s)
 		if err != nil || !r.Satisfies(v) {
 			continue
 		}
@@ -104,7 +104,7 @@ func FirstSatisfying(versions []string, rng string) (string, bool) {
 		return "", false
 	}
 	for _, s := range versions {
-		v, err := parseVersion(s, true)
+		v, err := parseForRange(s)
 		if err == nil && r.Satisfies(v) {
 			return s, true
 		}
@@ -203,7 +203,7 @@ func parseComparator(s string) (comparator, error) {
 	if m[2] == "" {
 		return comparator{op: op}, nil
 	}
-	v, err := parseVersion(m[2], false)
+	v, err := Parse(m[2])
 	if err != nil {
 		return comparator{}, err
 	}
@@ -217,7 +217,7 @@ func isX(id string) bool {
 }
 
 // incDecimal returns the decimal string for id plus one. It works on digit
-// strings so it cannot overflow. The result is then validated by parseVersion,
+// strings so it cannot overflow. The result is then validated by Parse,
 // which rejects anything above 2^53-1, matching node-semver's MAX_SAFE_INTEGER
 // check.
 func incDecimal(id string) string {

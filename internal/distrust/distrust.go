@@ -1,6 +1,5 @@
-// Package distrust removes distrusted root CA certificates from the Node.js binaries HNVM installs. It is the Go port of
-// the distrust step in lib/hnvm/ensure_bin.sh. The marker file, lock directory and messages match the bash version
-// byte-for-byte, so bash and Go HNVM can share ~/.hnvm.
+// Package distrust removes distrusted root CA certificates from the Node.js binaries HNVM installs. The marker file, lock
+// directory and messages match the former bash implementation byte-for-byte, so older bash HNVM installs can share ~/.hnvm.
 package distrust
 
 import (
@@ -122,7 +121,7 @@ func (a *applier) apply(list string) error {
 	return nil
 }
 
-// acquireLock takes the mkdir lock that bash ensure_bin.sh also uses, so the two interlock. A lock older than two minutes
+// acquireLock takes the mkdir lock that bash HNVM also uses, so the two interlock. A lock older than two minutes
 // was left behind by a killed process and is removed. It returns false when the lock can't be created at all.
 func (a *applier) acquireLock(lockDir string) bool {
 	retries := 0
@@ -256,7 +255,7 @@ func readMarker(path string) (string, bool) {
 }
 
 // normalizeFingerprints turns the distrust list and HNVM_DISTRUST_CERTS_EXTRA into the fingerprints to remove, the same way
-// ensure_bin.sh does. Blank and comment lines of the list are skipped. Everything up to the last '=' (an openssl
+// bash HNVM did. Blank and comment lines of the list are skipped. Everything up to the last '=' (an openssl
 // "sha256 Fingerprint=" label) is dropped, colons and whitespace are removed, and the result is lowercased, deduplicated
 // and sorted. Invalid entries are returned too; the caller checks them.
 func normalizeFingerprints(list, extra string) []string {
