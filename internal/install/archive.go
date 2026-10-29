@@ -89,11 +89,21 @@ func extractTarGz(r io.Reader, dest string, strip int) error {
 
 // createLinks creates the archive's symlinks, then checks that each one, followed through any
 // other links on the way, stays under root. Node's npm/npx are relative symlinks into lib/node_modules.
+// A link's parent directory is checked before anything is created or removed there, so a link the
+// archive made earlier can't redirect that work outside root. The final pass is still needed: a later
+// link can change where an earlier one resolves.
 func createLinks(root string, links []*tar.Header, strip int) error {
 	var targets []string
 	for _, hdr := range links {
 		target, _, _ := safeJoin(root, hdr.Name, strip)
 		if filepath.IsAbs(hdr.Linkname) {
+			return fmt.Errorf("unsafe symlink in archive: %q -> %q", hdr.Name, hdr.Linkname)
+		}
+		parent, err := filepath.Rel(root, filepath.Dir(target))
+		if err != nil {
+			return err
+		}
+		if !staysUnder(root, parent) {
 			return fmt.Errorf("unsafe symlink in archive: %q -> %q", hdr.Name, hdr.Linkname)
 		}
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {

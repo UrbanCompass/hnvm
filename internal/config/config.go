@@ -130,12 +130,13 @@ type rcFile struct {
 }
 
 // rcChain returns the rc files that apply, highest priority first. HNVM_NOFALLBACK=true, from the
-// environment or an rc file already read, stops the walk.
+// environment or an rc file already read, stops the walk. A non-empty environment value outranks
+// rc files, so HNVM_NOFALLBACK=false in the environment keeps the walk going.
 func (c *Config) rcChain(in Inputs) []rcFile {
 	var chain []rcFile
 	stop := func() bool {
-		if v, ok := in.Env("HNVM_NOFALLBACK"); ok && v == "true" {
-			return true
+		if v, ok := in.Env("HNVM_NOFALLBACK"); ok && v != "" {
+			return v == "true"
 		}
 		for _, rc := range chain {
 			if rc.values["HNVM_NOFALLBACK"] == "true" {

@@ -152,6 +152,39 @@ func TestExtractRejectsChainedSymlinkEscape(t *testing.T) {
 	}
 }
 
+// a points at dest's parent, so creating a/victim would replace a file outside dest before the
+// final check ever rejects a.
+func TestExtractRejectsLinksCreatedThroughLinks(t *testing.T) {
+	parent := t.TempDir()
+	dest := filepath.Join(parent, "dest")
+	victim := filepath.Join(parent, "victim")
+	if err := os.Mkdir(dest, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(victim, []byte("keep"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gz)
+	for _, h := range []*tar.Header{
+		{Name: "top/a", Typeflag: tar.TypeSymlink, Linkname: ".."},
+		{Name: "top/a/victim", Typeflag: tar.TypeSymlink, Linkname: "dest"},
+	} {
+		tw.WriteHeader(h)
+	}
+	tw.Close()
+	gz.Close()
+
+	if err := extractTarGz(&buf, dest, 1); err == nil {
+		t.Fatal("expected the escaping symlink to be rejected")
+	}
+	if fi, err := os.Lstat(victim); err != nil || !fi.Mode().IsRegular() {
+		t.Fatalf("file outside dest was touched: %v", err)
+	}
+}
+
 func TestExtractKeepsInternalSymlinks(t *testing.T) {
 	dest := t.TempDir()
 	var buf bytes.Buffer

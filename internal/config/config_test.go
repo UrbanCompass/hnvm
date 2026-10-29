@@ -135,6 +135,12 @@ func TestNoFallback(t *testing.T) {
 	if c.Get("HNVM_RANGE_CACHE") != "60" {
 		t.Error("built-in defaults must survive HNVM_NOFALLBACK")
 	}
+
+	// The environment outranks rc files, so it can turn fallback back on.
+	c, _ = Load(Inputs{Env: env(map[string]string{"HNVM_NOFALLBACK": "false"}), Cwd: cwd, Home: home, DefaultRC: "HNVM_NODE=latest"})
+	if got := c.Get("HNVM_NODE"); got != "1.0.0" {
+		t.Errorf("HNVM_NODE = %q, want 1.0.0 when the environment re-enables fallback", got)
+	}
 }
 
 func TestGitRootWorktreeFile(t *testing.T) {
