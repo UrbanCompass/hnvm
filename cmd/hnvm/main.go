@@ -3,21 +3,19 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/UrbanCompass/hnvm/internal/cli"
 	"github.com/UrbanCompass/hnvm/internal/shim"
 )
 
+// version is set at release time with -ldflags "-X main.version=..."
+var version = "dev"
+
 func main() {
-	name := filepath.Base(os.Args[0])
-	switch name {
-	case "node":
-		os.Exit(shim.Node(os.Args[1:]))
-	default:
-		// The management CLI (internal/cli) arrives in Phase 4.
-		fmt.Fprintf(os.Stderr, "hnvm: %q is not handled by the Go binary yet\n", name)
-		os.Exit(1)
+	if name := filepath.Base(os.Args[0]); shim.IsTool(name) {
+		os.Exit(shim.Run(name, os.Args[1:]))
 	}
+	os.Exit(cli.Main(version, os.Args[1:]))
 }

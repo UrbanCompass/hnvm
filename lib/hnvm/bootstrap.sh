@@ -8,6 +8,9 @@
 #   3. $HNVM_PATH/.hnvm-bin/<ver>/hnvm   cached download
 #   4. download hnvm_<os>_<arch>.tar.gz for lib/hnvm/bootstrap-version from
 #      ${HNVM_RELEASE_DIST:-https://github.com/UrbanCompass/hnvm/releases/download}, verified against checksums.txt
+#
+# Until the first Go release, bootstrap-version is the placeholder 0.0.0. Then, with no binary from 1. or 2.,
+# hnvm_bootstrap_exec returns instead of exec'ing and the caller falls back to the bash implementation.
 
 hnvm_bootstrap_fail() {
   echo "hnvm: $*" >&2
@@ -86,6 +89,7 @@ hnvm_bootstrap_exec() {
     bin="${script_dir}/../dist/hnvm"
   else
     version="$(tr -d '[:space:]' < "${script_dir}/../lib/hnvm/bootstrap-version")"
+    [ "${version}" != "0.0.0" ] || return 0
     bin="${HNVM_PATH}/.hnvm-bin/${version}/hnvm"
     [ -x "${bin}" ] || hnvm_bootstrap_download "${version}" "${HNVM_PATH}/.hnvm-bin/${version}"
   fi

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -58,6 +59,8 @@ func defaults(home string) map[string]string {
 		"HNVM_DISTRUST_CERTS":        "true",
 		"HNVM_DISTRUST_CERTS_EXTRA":  "",
 		"HNVM_DISTRUST_CERTS_STRICT": "false",
+		"HNVM_MIN_SAFE_NODE":         "true",
+		"HNVM_MIN_SAFE_NODE_MAJOR":   "false",
 	}
 }
 
@@ -99,6 +102,16 @@ func Load(in Inputs) (*Config, error) {
 	return c, nil
 }
 
+// Keys returns every key that has a value, sorted.
+func (c *Config) Keys() []string {
+	keys := make([]string, 0, len(c.values))
+	for k := range c.values {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 // Get returns the value of key, or "" when unset.
 func (c *Config) Get(key string) string { return c.values[key].Value }
 
@@ -107,6 +120,9 @@ func (c *Config) Lookup(key string) (Value, bool) {
 	v, ok := c.values[key]
 	return v, ok
 }
+
+// Override sets key for the rest of this invocation, recorded as an explicit override.
+func (c *Config) Override(key, value string) { c.values[key] = Value{value, "override"} }
 
 // Bool reports whether key is exactly "true", which is how every HNVM flag is spelled.
 func (c *Config) Bool(key string) bool { return c.Get(key) == "true" }

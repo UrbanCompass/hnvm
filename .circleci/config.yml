@@ -4,7 +4,11 @@ orbs:
 workflows:
   ci:
     jobs:
+      - go-test
+      # The jest suite against the bash implementation (no Go binary available, bootstrap-version is the placeholder)
       - integration
+      # The same, unchanged jest suite against the Go binary: bin/* run dist/hnvm when it exists
+      - parity
       - shellcheck/check:
           dir: '.'
   publish:
@@ -15,7 +19,21 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v\d+\.\d+\.\d+/
+      - release:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+/
 jobs:
+  go-test:
+    docker:
+      - image: cimg/go:1.24
+    steps:
+      - checkout
+      - run: go vet ./...
+      - run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - run: go test -race ./...
   integration:
     docker:
       - image: circleci/node:14.18-buster
@@ -27,6 +45,45 @@ jobs:
       - run:
           command: npm test
           working_directory: ./test
+  parity:
+    docker:
+      - image: cimg/go:1.24-node
+    steps:
+      - checkout
+      - run: go build -o dist/hnvm ./cmd/hnvm
+      - run:
+          command: npm install
+          working_directory: ./test
+      - run:
+          command: npm test
+          working_directory: ./test
+  release:
+    docker:
+      - image: cimg/go:1.24
+    steps:
+      - checkout
+      - run:
+          name: Publish binaries to GitHub Releases
+          command: |
+            curl -sfL https://goreleaser.com/static/run | VERSION=v2.12.0 bash -s -- release --clean
+      - run:
+          name: Mirror binaries to Nexus
+          command: |
+            for f in .goreleaser-dist/hnvm_*.tar.gz .goreleaser-dist/checksums.txt; do
+              curl --fail-with-body -sS -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --http1.1 \
+                --upload-file "$f" \
+                "${NEXUS_URL}/repository/generic-local/hnvm/${CIRCLE_TAG}/$(basename "$f")"
+            done
+      - run:
+          name: Point the bootstrap shims at this release
+          command: |
+            git config user.name "hnvm release"
+            git config user.email "hnvm-release@users.noreply.github.com"
+            git fetch origin master
+            git checkout -B master origin/master
+            echo "${CIRCLE_TAG#v}" > lib/hnvm/bootstrap-version
+            git commit -am "chore: Bootstrap hnvm ${CIRCLE_TAG}"
+            git push origin master
   publish:
     docker:
       - image: cimg/base:2026.10-24.04

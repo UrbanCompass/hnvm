@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BIG</key>
+	<integer>1099511627776</integer>
+	<key>BLOB</key>
+	<data>
+	AAH/
+	</data>
+	<key>COUNT</key>
+	<integer>3</integer>
+	<key>EMPTY_LIST</key>
+	<array/>
+	<key>EMPTY_STRING</key>
+	<string></string>
+	<key>HNVM_DISTRUST_CERTS</key>
+	<true/>
+	<key>HNVM_DISTRUST_CERTS_EXTRA</key>
+	<array>
+		<string>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</string>
+		<string>sha256 Fingerprint=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb</string>
+	</array>
+	<key>HNVM_DISTRUST_CERTS_STRICT</key>
+	<string>YES</string>
+	<key>HNVM_MIN_SAFE_NODE</key>
+	<false/>
+	<key>HNVM_MIN_SAFE_NODE_MAJOR</key>
+	<string>TRUE</string>
+	<key>NEGATIVE</key>
+	<integer>-7</integer>
+	<key>NESTED</key>
+	<dict>
+		<key>inner</key>
+		<string>x</string>
+		<key>list</key>
+		<array>
+			<integer>1</integer>
+			<integer>2</integer>
+		</array>
+	</dict>
+	<key>NON_ASCII</key>
+	<string>café</string>
+	<key>ONE_INT</key>
+	<integer>1</integer>
+	<key>ONE_REAL</key>
+	<real>1.0</real>
+	<key>RATIO</key>
+	<real>1.5</real>
+	<key>SOMETHING_ELSE</key>
+	<string>maybe</string>
+	<key>WHEN</key>
+	<date>2026-10-29T12:00:00Z</date>
+</dict>
+</plist>
